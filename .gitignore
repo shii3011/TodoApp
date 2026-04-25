@@ -3,6 +3,9 @@
 .env.*
 docker-compose.override.yml
 
+# ローカルメモ
+INTERVIEW_NOTES.md
+
 # CDK
 cdk-outputs.json
 cdk.out/

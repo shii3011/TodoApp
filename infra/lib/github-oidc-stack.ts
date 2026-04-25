@@ -69,11 +69,6 @@ export class GitHubOidcStack extends cdk.Stack {
               actions: ['cognito-idp:*'],
               resources: ['*'],
             }),
-            // Secrets Manager
-            new iam.PolicyStatement({
-              actions: ['secretsmanager:*'],
-              resources: ['*'],
-            }),
             // IAM（Lambda 実行ロールの作成・管理）
             new iam.PolicyStatement({
               actions: [
