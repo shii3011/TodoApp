@@ -1,0 +1,13 @@
+/* ===== Tag selector ===== */
+.tagSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #e0f2fe;
+  border-radius: 7px;
+  background: #f8fbff;
+  margin-bottom: 10px;
+  min-height: 38px;
+  align-items: center;
+}

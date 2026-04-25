@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Debug Frontend (Chrome)",
+            "url": "http://127.0.0.1:5173",
+            "webRoot": "${workspaceFolder}/frontend/src",
+            "sourceMapPathOverrides": {
+                "/@fs/*": "/*",
+                "/src/*": "${workspaceFolder}/frontend/src/*"
+            }
+        }
+    ]
+}

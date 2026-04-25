@@ -1,0 +1,14 @@
+# 環境変数・ローカル設定（絶対にコミットしない）
+.env
+.env.*
+docker-compose.override.yml
+
+# CDK
+cdk-outputs.json
+cdk.out/
+
+# Node
+node_modules/
+
+# ビルド成果物
+dist/

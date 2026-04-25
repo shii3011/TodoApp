@@ -1,0 +1,134 @@
+/* ===== Subtask section ===== */
+.subtaskSection {
+  border-top: 1px solid #f0f9ff;
+  margin-top: 10px;
+  padding-top: 8px;
+}
+
+.subtaskToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: #7dd3fc;
+  font-family: inherit;
+  padding: 2px 0;
+  transition: color 0.15s;
+}
+
+.subtaskToggle:hover {
+  color: #0e90e8;
+}
+
+.subtaskArrow {
+  font-size: 9px;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.subtaskArrowOpen {
+  transform: rotate(90deg);
+}
+
+.subtaskCount {
+  background: #e0f2fe;
+  color: #38a8f5;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ===== Subtask list ===== */
+.subtaskBody {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtaskItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+
+.subtaskTitle {
+  font-size: 13px;
+  color: #1e3a5f;
+  flex: 1;
+}
+
+.subtaskDel {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #bae6fd;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  opacity: 0;
+}
+
+.subtaskItem:hover .subtaskDel {
+  opacity: 1;
+}
+
+.subtaskDel:hover {
+  color: #e11d48;
+  background: #fff1f2;
+}
+
+/* ===== Add subtask ===== */
+.subtaskAdd {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.subtaskInput {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #e0f2fe;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1e3a5f;
+  background: #f8fbff;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.subtaskInput::placeholder {
+  color: #bae6fd;
+}
+
+.subtaskInput:focus {
+  outline: none;
+  border-color: #38a8f5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(56, 168, 245, 0.12);
+}
+
+.subtaskAddBtn {
+  padding: 6px 12px;
+  background: #38a8f5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.subtaskAddBtn:hover {
+  background: #0e90e8;
+}

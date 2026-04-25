@@ -1,0 +1,15 @@
+/* ===== Form card ===== */
+.formCard {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+/* ===== Form heading ===== */
+.formHeading {
+  font-size: 13px;
+  font-weight: 700;
+  color: #7dd3fc;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

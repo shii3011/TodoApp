@@ -1,0 +1,92 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: CDK Deploy + Frontend Upload
+    runs-on: ubuntu-latest
+    outputs:
+      app-url: ${{ steps.get-url.outputs.url }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-1
+
+      - name: CDK deploy
+        run: |
+          npm ci
+          npx cdk deploy TodoAppStack \
+            --require-approval never \
+            --parameters DatabaseUrl="${{ secrets.DATABASE_URL }}" \
+            --outputs-file ../cdk-outputs.json
+        working-directory: infra
+
+      - name: Build frontend
+        run: |
+          npm ci
+          STACK=$(cat ../cdk-outputs.json | jq -r '.TodoAppStack')
+          VITE_API_BASE_URL=$(echo $STACK | jq -r '.ApiUrl') \
+          VITE_COGNITO_USER_POOL_ID=$(echo $STACK | jq -r '.UserPoolId') \
+          VITE_COGNITO_CLIENT_ID=$(echo $STACK | jq -r '.UserPoolClientId') \
+          npm run build
+        working-directory: frontend
+
+      - name: Upload to S3
+        run: |
+          BUCKET=$(cat cdk-outputs.json | jq -r '.TodoAppStack.S3BucketName')
+          aws s3 sync frontend/dist/ "s3://$BUCKET" --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          DIST_ID=$(cat cdk-outputs.json | jq -r '.TodoAppStack.DistributionId')
+          aws cloudfront create-invalidation \
+            --distribution-id "$DIST_ID" \
+            --paths "/*" \
+            --query 'Invalidation.Id' \
+            --output text
+
+      - id: get-url
+        name: Get deployed URL
+        run: |
+          URL=$(cat cdk-outputs.json | jq -r '.TodoAppStack.CloudFrontUrl')
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+  # ── E2E テスト（デプロイ後に本番 URL に対して実行）──────────────
+  e2e-test:
+    name: E2E Tests (Playwright via Docker)
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run E2E tests via Docker Compose
+        run: |
+          docker compose --profile test run --rm \
+            -e PLAYWRIGHT_BASE_URL=${{ needs.deploy.outputs.app-url }} \
+            -e E2E_EMAIL=${{ secrets.E2E_EMAIL }} \
+            -e E2E_PASSWORD=${{ secrets.E2E_PASSWORD }} \
+            e2e
+
+      - name: Upload test report on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

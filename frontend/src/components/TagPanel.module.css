@@ -1,0 +1,102 @@
+/* ===== Tag panel ===== */
+.tagPanel {
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.tagPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.tagPanelHeader h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tagPanelBody {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  min-height: 24px;
+}
+
+.tagPanelItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f0f9ff;
+  border: 1.5px solid #e0f2fe;
+}
+
+.tagDeleteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  color: #bae6fd;
+  line-height: 1;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.tagDeleteBtn:hover {
+  color: #e11d48;
+  background: #fff1f2;
+}
+
+/* ===== Tag create form ===== */
+.tagCreateForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid #f0f9ff;
+}
+
+.tagNameInput {
+  flex: 1;
+  min-width: 120px;
+  padding: 7px 11px;
+  font-size: 13px;
+  margin-bottom: 0;
+  resize: none;
+}
+
+/* ===== Color picker ===== */
+.colorPicker {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.colorSwatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.colorSwatch:hover {
+  transform: scale(1.15);
+}
+
+.colorSwatchActive {
+  border-color: #1e3a5f;
+  transform: scale(1.15);
+}
