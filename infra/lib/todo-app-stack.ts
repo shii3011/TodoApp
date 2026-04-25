@@ -93,6 +93,11 @@ export class TodoAppStack extends cdk.Stack {
               'npx prisma generate',
               'npm run build',
               'npm prune --omit=dev',
+              // Lambda に不要なファイルを削除してサイズを 250MB 以内に収める
+              'find node_modules/.prisma -name "*.node" ! -name "*rhel*" -delete 2>/dev/null || true',
+              'find node_modules/.prisma -name "query_engine-*" ! -name "*rhel*" -delete 2>/dev/null || true',
+              'find node_modules -name "*.d.ts" -delete 2>/dev/null || true',
+              'rm -rf src/ tests/',
             ].join(' && '),
           ],
           user: 'root',
