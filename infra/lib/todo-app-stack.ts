@@ -6,6 +6,7 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -118,9 +119,17 @@ export class TodoAppStack extends cdk.Stack {
     });
 
     // Lambda が SSM パラメータを読み取れるよう権限を付与
-    dbUrlParam.grantRead(backendFn);
-    userPoolIdParam.grantRead(backendFn);
-    clientIdParam.grantRead(backendFn);
+    backendFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameters', 'ssm:GetParameter'],
+      resources: [
+        `arn:aws:ssm:${this.region}:${this.account}:parameter${SSM_PATH}/*`,
+      ],
+    }));
+    // SecureString の KMS 復号権限（DATABASE_URL）
+    backendFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['kms:Decrypt'],
+      resources: ['*'],
+    }));
 
     // ==================== API Gateway ====================
     const api = new apigateway.LambdaRestApi(this, 'Api', {
