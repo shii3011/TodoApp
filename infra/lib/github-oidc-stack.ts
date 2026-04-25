@@ -40,7 +40,7 @@ export class GitHubOidcStack extends cdk.Stack {
         },
       }),
       description: 'GitHub Actions deployment role via OIDC (no long-lived credentials)',
-      maxSessionDuration: cdk.Duration.minutes(30),
+      maxSessionDuration: cdk.Duration.hours(1),
       inlinePolicies: {
         CdkDeployPolicy: new iam.PolicyDocument({
           statements: [
@@ -91,9 +91,13 @@ export class GitHubOidcStack extends cdk.Stack {
               actions: ['logs:*'],
               resources: ['*'],
             }),
-            // SSM（CDK ブートストラップパラメータ）
+            // SSM（CDK ブートストラップパラメータ + Parameter Store 管理）
             new iam.PolicyStatement({
-              actions: ['ssm:GetParameter', 'ssm:PutParameter'],
+              actions: [
+                'ssm:GetParameter', 'ssm:GetParameters', 'ssm:GetParametersByPath',
+                'ssm:PutParameter', 'ssm:DeleteParameter',
+                'ssm:AddTagsToResource', 'ssm:ListTagsForResource',
+              ],
               resources: ['*'],
             }),
           ],
