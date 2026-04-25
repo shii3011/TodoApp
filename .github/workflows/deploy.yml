@@ -32,7 +32,6 @@ jobs:
           npm ci
           npx cdk deploy TodoAppStack \
             --require-approval never \
-            --parameters DatabaseUrl="${{ secrets.DATABASE_URL }}" \
             --outputs-file ../cdk-outputs.json
         working-directory: infra
 

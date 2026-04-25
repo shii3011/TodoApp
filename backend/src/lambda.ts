@@ -1,4 +1,4 @@
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { SSMClient, GetParametersByPathCommand } from '@aws-sdk/client-ssm';
 import serverless from 'serverless-http';
 import type { Handler } from 'aws-lambda';
 
@@ -6,22 +6,24 @@ import type { Handler } from 'aws-lambda';
 let cachedHandler: ReturnType<typeof serverless> | null = null;
 
 /**
- * AWS Secrets Manager からシークレットを取得して process.env にセットする。
- * SECRETS_ARN が未設定（ローカル開発など）の場合は何もしない。
+ * AWS Systems Manager Parameter Store からパラメータを取得して process.env にセットする。
+ * SSM_PARAM_PATH が未設定（ローカル開発など）の場合は何もしない。
  */
 async function loadSecrets(): Promise<void> {
-  const secretArn = process.env.SECRETS_ARN;
-  if (!secretArn) return;
+  const paramPath = process.env.SSM_PARAM_PATH;
+  if (!paramPath) return;
 
-  const client = new SecretsManagerClient({});
-  const { SecretString } = await client.send(
-    new GetSecretValueCommand({ SecretId: secretArn }),
+  const client = new SSMClient({});
+  const { Parameters } = await client.send(
+    new GetParametersByPathCommand({ Path: paramPath, WithDecryption: true }),
   );
-  if (!SecretString) return;
+  if (!Parameters) return;
 
-  const secrets = JSON.parse(SecretString) as Record<string, string>;
-  for (const [key, value] of Object.entries(secrets)) {
-    process.env[key] = value;
+  for (const { Name, Value } of Parameters) {
+    if (!Name || !Value) continue;
+    // "/todo-app/production/DATABASE_URL" → "DATABASE_URL"
+    const key = Name.split('/').pop()!;
+    process.env[key] = Value;
   }
 }
 

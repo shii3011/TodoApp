@@ -5,20 +5,13 @@ import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
 export class TodoAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-
-    // デプロイ時に DATABASE_URL を受け取るパラメータ
-    const databaseUrl = new cdk.CfnParameter(this, 'DatabaseUrl', {
-      type: 'String',
-      description: 'Neon PostgreSQL connection string',
-      noEcho: true,
-    });
 
     // ==================== Cognito ====================
     const userPool = new cognito.UserPool(this, 'UserPool', {
@@ -63,17 +56,23 @@ export class TodoAppStack extends cdk.Stack {
       ],
     });
 
-    // ==================== Secrets Manager ====================
-    // DATABASE_URL・Cognito ID を1つのシークレットにまとめて管理する。
-    // Lambda は IAM ロール経由で取得するためアクセスキー不要。
-    const appSecret = new secretsmanager.Secret(this, 'AppSecret', {
-      secretName: 'todo-app/production',
-      description: 'TODOアプリ本番環境のシークレット（DB接続情報・Cognito ID）',
-      secretObjectValue: {
-        DATABASE_URL: cdk.SecretValue.cfnParameter(databaseUrl),
-        COGNITO_USER_POOL_ID: cdk.SecretValue.unsafePlainText(userPool.userPoolId),
-        COGNITO_CLIENT_ID: cdk.SecretValue.unsafePlainText(userPoolClient.userPoolClientId),
-      },
+    // ==================== SSM Parameter Store ====================
+    // DATABASE_URL は手動で SecureString として作成済み（CFn は SecureString 作成不可）。
+    // Cognito ID は機密度が低いため String で CDK から作成する。
+    const SSM_PATH = '/todo-app/production';
+
+    const dbUrlParam = ssm.StringParameter.fromSecureStringParameterAttributes(
+      this, 'DbUrlParam', { parameterName: `${SSM_PATH}/DATABASE_URL` },
+    );
+
+    const userPoolIdParam = new ssm.StringParameter(this, 'UserPoolIdParam', {
+      parameterName: `${SSM_PATH}/COGNITO_USER_POOL_ID`,
+      stringValue: userPool.userPoolId,
+    });
+
+    const clientIdParam = new ssm.StringParameter(this, 'ClientIdParam', {
+      parameterName: `${SSM_PATH}/COGNITO_CLIENT_ID`,
+      stringValue: userPoolClient.userPoolClientId,
     });
 
     // ==================== Lambda ====================
@@ -103,15 +102,16 @@ export class TodoAppStack extends cdk.Stack {
       memorySize: 512,
       environment: {
         NODE_ENV: 'production',
-        // DATABASE_URL・Cognito ID はコールドスタート時に Secrets Manager から取得する。
-        // Lambda 環境変数には ARN のみ設定し、シークレット本体を平文で渡さない。
-        SECRETS_ARN: appSecret.secretArn,
+        // DATABASE_URL・Cognito ID はコールドスタート時に SSM Parameter Store から取得する。
+        SSM_PARAM_PATH: SSM_PATH,
         ALLOWED_ORIGINS: `https://${distribution.distributionDomainName}`,
       },
     });
 
-    // Lambda が Secrets Manager のシークレットを読み取れるよう権限を付与
-    appSecret.grantRead(backendFn);
+    // Lambda が SSM パラメータを読み取れるよう権限を付与
+    dbUrlParam.grantRead(backendFn);
+    userPoolIdParam.grantRead(backendFn);
+    clientIdParam.grantRead(backendFn);
 
     // ==================== API Gateway ====================
     const api = new apigateway.LambdaRestApi(this, 'Api', {
@@ -155,9 +155,9 @@ export class TodoAppStack extends cdk.Stack {
       description: 'CloudFront Distribution ID',
     });
 
-    new cdk.CfnOutput(this, 'SecretArn', {
-      value: appSecret.secretArn,
-      description: 'Secrets Manager シークレット ARN',
+    new cdk.CfnOutput(this, 'SsmParamPath', {
+      value: SSM_PATH,
+      description: 'SSM Parameter Store パス',
     });
   }
 }
