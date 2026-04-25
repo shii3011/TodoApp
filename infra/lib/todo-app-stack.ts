@@ -62,16 +62,13 @@ export class TodoAppStack extends cdk.Stack {
     // Cognito ID は機密度が低いため String で CDK から作成する。
     const SSM_PATH = '/todo-app/production';
 
-    const dbUrlParam = ssm.StringParameter.fromSecureStringParameterAttributes(
-      this, 'DbUrlParam', { parameterName: `${SSM_PATH}/DATABASE_URL` },
-    );
-
-    const userPoolIdParam = new ssm.StringParameter(this, 'UserPoolIdParam', {
+    // DATABASE_URL は手動で SSM SecureString として作成済みのため参照のみ
+    new ssm.StringParameter(this, 'UserPoolIdParam', {
       parameterName: `${SSM_PATH}/COGNITO_USER_POOL_ID`,
       stringValue: userPool.userPoolId,
     });
 
-    const clientIdParam = new ssm.StringParameter(this, 'ClientIdParam', {
+    new ssm.StringParameter(this, 'ClientIdParam', {
       parameterName: `${SSM_PATH}/COGNITO_CLIENT_ID`,
       stringValue: userPoolClient.userPoolClientId,
     });
