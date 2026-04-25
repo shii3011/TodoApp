@@ -51,9 +51,10 @@ export default function App({ signOut, user }: AppProps) {
     const syncUser = async () => {
       try {
         const attrs = await fetchUserAttributes()
+        const email = attrs.email ?? user?.signInDetails?.loginId ?? ''
         await apiFetch('/users/me', {
           method: 'PUT',
-          body: JSON.stringify({ email: attrs.email ?? '', name: attrs.name }),
+          body: JSON.stringify({ email, name: attrs.name }),
         })
       } catch { /* 同期失敗は無視 */ }
     }
