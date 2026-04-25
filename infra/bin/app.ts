@@ -13,7 +13,7 @@ new TodoAppStack(app, 'TodoAppStack', {
 
 // GitHub Actions OIDC ロール（初回のみ手動デプロイ: npx cdk deploy GitHubOidcStack）
 new GitHubOidcStack(app, 'GitHubOidcStack', {
-  githubOrg: 'YOUR_GITHUB_USERNAME',   // ← 自分の GitHub ユーザー名に変更
+  githubOrg: 'shii3011',
   githubRepo: 'TodoApp',
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
