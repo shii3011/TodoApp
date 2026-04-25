@@ -1,4 +1,4 @@
-import express, { type Request, type Response, type NextFunction } from 'express';
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -30,14 +30,6 @@ if (process.env.NODE_ENV === 'production') {
     }),
   );
 }
-
-// リクエストタイムアウト（10秒）
-app.use((_req: Request, res: Response, next: NextFunction) => {
-  res.setTimeout(10_000, () => {
-    res.status(503).json({ message: 'Request timeout' });
-  });
-  next();
-});
 
 // ヘルスチェック（認証不要）
 app.get('/health', (_req: Request, res: Response) => {
