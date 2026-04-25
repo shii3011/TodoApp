@@ -1,4 +1,4 @@
-import { SSMClient, GetParametersByPathCommand } from '@aws-sdk/client-ssm';
+import { SSMClient, GetParametersCommand } from '@aws-sdk/client-ssm';
 import serverless from 'serverless-http';
 import type { Handler } from 'aws-lambda';
 
@@ -13,9 +13,15 @@ async function loadSecrets(): Promise<void> {
   const paramPath = process.env.SSM_PARAM_PATH;
   if (!paramPath) return;
 
+  const names = [
+    `${paramPath}/DATABASE_URL`,
+    `${paramPath}/COGNITO_USER_POOL_ID`,
+    `${paramPath}/COGNITO_CLIENT_ID`,
+  ];
+
   const client = new SSMClient({});
   const { Parameters } = await client.send(
-    new GetParametersByPathCommand({ Path: paramPath, WithDecryption: true }),
+    new GetParametersCommand({ Names: names, WithDecryption: true }),
   );
   if (!Parameters) return;
 
