@@ -12,6 +12,9 @@ export { prisma } from './lib/prisma.js';
 
 export const app = express();
 
+// API Gateway / CloudFront からのリバースプロキシを信頼する
+app.set('trust proxy', 1);
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://127.0.0.1:5173'];
