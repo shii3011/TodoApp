@@ -2,7 +2,7 @@ import { SSMClient, GetParametersCommand } from '@aws-sdk/client-ssm';
 import serverless from 'serverless-http';
 import type { Handler } from 'aws-lambda';
 
-// コールドスタートごとに1回だけ初期化する
+// コールドスタートごとに1回だけ初期化する（SSM からシークレットを取得後に app を import）
 let cachedHandler: ReturnType<typeof serverless> | null = null;
 
 /**
