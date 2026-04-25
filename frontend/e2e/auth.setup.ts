@@ -41,5 +41,11 @@ setup('Cognito ログイン', async ({ page }) => {
   // アプリ本体が表示されるまで待機
   await expect(logoutBtn).toBeVisible({ timeout: 15_000 })
 
+  // PUT /users/me（ユーザーDB同期）が完了するまで待機
+  await page.waitForResponse(
+    resp => resp.url().includes('/users/me') && resp.request().method() === 'PUT',
+    { timeout: 15_000 },
+  )
+
   await page.context().storageState({ path: SESSION_FILE })
 })
