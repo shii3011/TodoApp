@@ -4,7 +4,7 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 // そうでない場合は VITE_API_BASE_URL、またはローカル開発用フォールバックを使う。
 const API_BASE = import.meta.env.VITE_API_PROXY_TARGET
   ? '/api'
-  : (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3000');
+  : (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3000').replace(/\/$/, '');
 
 export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const session = await fetchAuthSession();
