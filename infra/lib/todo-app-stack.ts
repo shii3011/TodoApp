@@ -7,6 +7,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -129,14 +131,90 @@ export class TodoAppStack extends cdk.Stack {
     }));
 
     // ==================== API Gateway ====================
+    // アクセスログ用 CloudWatch ロググループ（1 ヶ月保持）
+    const apiAccessLogGroup = new logs.LogGroup(this, 'ApiAccessLogs', {
+      retention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     const api = new apigateway.LambdaRestApi(this, 'Api', {
       handler: backendFn,
       proxy: true,
+      deployOptions: {
+        // スロットリング: 同時 50 バースト、秒間 20 リクエストまで
+        throttlingBurstLimit: 50,
+        throttlingRateLimit: 20,
+        // アクセスログ（リクエスト/レスポンス詳細を CloudWatch に記録）
+        accessLogDestination: new apigateway.LogGroupLogDestination(apiAccessLogGroup),
+        accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields(),
+      },
       defaultCorsPreflightOptions: {
         allowOrigins: [`https://${distribution.distributionDomainName}`],
         allowMethods: apigateway.Cors.ALL_METHODS,
         allowHeaders: ['Content-Type', 'Authorization'],
       },
+    });
+
+    // ==================== WAF ====================
+    // API Gateway に紐付ける WAF WebACL（REGIONAL スコープ）
+    const webAcl = new wafv2.CfnWebACL(this, 'ApiWaf', {
+      scope: 'REGIONAL',
+      defaultAction: { allow: {} },
+      visibilityConfig: {
+        cloudWatchMetricsEnabled: true,
+        metricName: 'ApiWaf',
+        sampledRequestsEnabled: true,
+      },
+      rules: [
+        // AWS マネージドルール: 一般的な Web 攻撃（SQLi, XSS 等）をブロック
+        {
+          name: 'AWSManagedRulesCommonRuleSet',
+          priority: 1,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: { vendorName: 'AWS', name: 'AWSManagedRulesCommonRuleSet' },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: 'CommonRuleSet',
+            sampledRequestsEnabled: true,
+          },
+        },
+        // AWS マネージドルール: 既知の悪意ある入力パターンをブロック
+        {
+          name: 'AWSManagedRulesKnownBadInputsRuleSet',
+          priority: 2,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: { vendorName: 'AWS', name: 'AWSManagedRulesKnownBadInputsRuleSet' },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: 'KnownBadInputs',
+            sampledRequestsEnabled: true,
+          },
+        },
+        // IP ベースのレートリミット: 同一 IP から 5 分間に 500 リクエスト超でブロック
+        {
+          name: 'IpRateLimit',
+          priority: 3,
+          action: { block: {} },
+          statement: {
+            rateBasedStatement: { limit: 500, aggregateKeyType: 'IP' },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: 'IpRateLimit',
+            sampledRequestsEnabled: true,
+          },
+        },
+      ],
+    });
+
+    // WAF を API Gateway ステージに紐付け
+    new wafv2.CfnWebACLAssociation(this, 'ApiWafAssociation', {
+      resourceArn: `arn:aws:apigateway:${this.region}::/restapis/${api.restApiId}/stages/${api.deploymentStage.stageName}`,
+      webAclArn: webAcl.attrArn,
     });
 
     // ==================== Outputs ====================
