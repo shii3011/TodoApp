@@ -57,6 +57,13 @@
   opacity: 1;
 }
 
+/* タッチデバイスでは常に表示 */
+@media (hover: none) {
+  .todoActions {
+    opacity: 1;
+  }
+}
+
 /* ===== Priority badge ===== */
 .badge {
   padding: 2px 7px;
@@ -133,6 +140,22 @@
 .editBody {
   padding: 16px 20px;
   flex: 1;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  .todoBody {
+    padding: 12px 14px;
+  }
+
+  .todoTitle {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .editBody {
+    padding: 12px 14px;
+  }
 }
 
 .editBtns {
