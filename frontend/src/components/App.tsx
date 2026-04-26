@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import type { AuthUser } from 'aws-amplify/auth'
-import { fetchUserAttributes } from 'aws-amplify/auth'
+import { fetchUserAttributes, fetchAuthSession } from 'aws-amplify/auth'
 import type { CSSProperties } from 'react'
 import type { Priority, StatusFilter } from '../types'
 import { getDueDateInfo } from '../utils/dueDate'
@@ -50,8 +50,12 @@ export default function App({ signOut, user }: AppProps) {
   useEffect(() => {
     const syncUser = async () => {
       try {
-        const attrs = await fetchUserAttributes()
-        const email = attrs.email ?? user?.signInDetails?.loginId ?? ''
+        const [attrs, session] = await Promise.all([fetchUserAttributes(), fetchAuthSession()])
+        const email =
+          attrs.email ??
+          (session.tokens?.idToken?.payload?.email as string | undefined) ??
+          user?.signInDetails?.loginId ??
+          ''
         await apiFetch('/users/me', {
           method: 'PUT',
           body: JSON.stringify({ email, name: attrs.name }),
