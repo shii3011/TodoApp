@@ -23,6 +23,7 @@
 - [本番 AWS 構成](#本番-aws-構成)
 - [API リファレンス](#api-リファレンス)
 - [設計の方針](#設計の方針)
+- [ハマった点・トラブルシューティング](#ハマった点トラブルシューティング)
 - [ライセンス](#ライセンス)
 
 ---
@@ -356,6 +357,116 @@ services/ ──► lib/errors.ts ◄── middleware/
 ### 並行アクセス制御
 
 書き込み操作（PUT / PATCH / DELETE）は `SELECT FOR UPDATE` + `$transaction(ReadCommitted)` による悲観的ロックで並列整合性を担保しています。
+
+---
+
+## ハマった点・トラブルシューティング
+
+Lambda + CI/CD の構築で実際に詰まった問題と解決策をまとめます。
+
+---
+
+### 1. `res.setTimeout` が Lambda でクラッシュする
+
+**症状**: Lambda 呼び出しが `TypeError: this.socket.setTimeout is not a function` で 500 エラー。
+
+**原因**: `serverless-http` が生成するモックソケットには `setTimeout` が実装されていない。Express の `res.setTimeout()` はリアルソケットを前提とするため、Lambda 上では使えない。
+
+**解決策**: タイムアウト設定ミドルウェアを削除。Lambda 自体の関数タイムアウト（30 秒）に委ねる。
+
+---
+
+### 2. `serverless-http` + Express v5 で req.body が Buffer のままになる
+
+**症状**: POST/PUT リクエストのボディが正しく届いているのに Zod バリデーションが `"Invalid input: expected string, received undefined"` で 400 を返す。
+
+**原因**: `serverless-http` v3 は Express v5 との完全な互換性がなく、Lambda の `event.body` を `Buffer` オブジェクトとして `req.body` に直接セットする。`express.json()` は「ボディが既にある」と判断してパースをスキップするため、Zod にはフィールドのない Buffer オブジェクトが渡される。
+
+**解決策**: `express.json()` の前に Buffer を JSON にパースするミドルウェアを追加。
+
+```typescript
+app.use((req, _res, next) => {
+  if (Buffer.isBuffer(req.body)) {
+    try { req.body = JSON.parse(req.body.toString('utf8')); }
+    catch { req.body = {}; }
+    next();
+  } else {
+    express.json({ limit: '10kb' })(req, _res, next);
+  }
+});
+```
+
+---
+
+### 3. Cognito アクセストークンに `email` クレームが存在しない
+
+**症状**: `PUT /users/me` が `"Invalid input: expected string, received undefined"` で 400。フロントエンドで `fetchUserAttributes()` の `attrs.email` が undefined になる。
+
+**原因**: Cognito のアクセストークンはユーザー識別（`sub` など）のみを含み、`email` クレームを持たない。`email` が含まれるのは ID トークンのみ。
+
+**解決策**: `fetchAuthSession()` の ID トークンペイロードから email を取得。
+
+```typescript
+const [attrs, session] = await Promise.all([fetchUserAttributes(), fetchAuthSession()])
+const email =
+  attrs.email ??
+  (session.tokens?.idToken?.payload?.email as string | undefined) ??
+  user?.signInDetails?.loginId ??
+  ''
+```
+
+---
+
+### 4. API Gateway 経由で `trust proxy` 設定が必要
+
+**症状**: Lambda ログに `ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false` が出て `express-rate-limit` が機能しない。
+
+**原因**: API Gateway はリクエストに `X-Forwarded-For` を付与するが、Express のデフォルト設定はリバースプロキシを信頼しない。
+
+**解決策**: `app.set('trust proxy', 1)` を追加。
+
+---
+
+### 5. SSM パラメータがコールドスタート時にキャッシュされる
+
+**症状**: SSM に `DATABASE_URL` を登録したのに Lambda が `Environment variable not found: DATABASE_URL` で起動失敗し続ける。
+
+**原因**: Lambda はウォームコンテナを使い回す。`loadSecrets()` はコールドスタート時にのみ実行されるため、SSM 登録前に起動したコンテナはパラメータなしのまま動き続ける。
+
+**解決策**: コードに任意の変更を加えて push し、Lambda を強制的に再デプロイ（新しいコールドスタートをトリガー）。
+
+---
+
+### 6. Prisma マイグレーションを本番 DB に手動で適用する必要がある
+
+**症状**: Lambda が `The table 'public.todos' does not exist` で 500 エラー。
+
+**原因**: CDK デプロイはアプリコードを Lambda に載せるだけで、`prisma migrate deploy` は自動実行されない。
+
+**解決策**: 初回デプロイ後に手元から実行。
+
+```bash
+DATABASE_URL="postgresql://..." npx prisma migrate deploy
+```
+
+---
+
+### 7. E2E テストが `PUT /users/me` より先に実行されユーザーが DB に存在しない
+
+**症状**: E2E テストでログイン後すぐに TODO を作成しようとすると外部キー制約エラー。
+
+**原因**: `App.tsx` の `syncUser()` は `void` で fire-and-forget。E2E の auth.setup がセッションを保存した時点では、ユーザーがまだ DB に登録されていない場合がある。
+
+**解決策**: auth.setup で `PUT /users/me` のレスポンスを待ってからセッションを保存。
+
+```typescript
+await expect(logoutBtn).toBeVisible({ timeout: 15_000 })
+await page.waitForResponse(
+  resp => resp.url().includes('/users/me') && resp.request().method() === 'PUT',
+  { timeout: 15_000 },
+)
+await page.context().storageState({ path: SESSION_FILE })
+```
 
 ---
 
