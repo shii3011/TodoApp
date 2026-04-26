@@ -23,7 +23,6 @@ export async function getTodo(req: Request<{ id: string }>, res: Response, next:
 }
 
 export async function createTodo(req: Request, res: Response, next: NextFunction): Promise<void> {
-  console.log('[createTodo] req.body:', JSON.stringify(req.body));
   const result = createTodoSchema.safeParse(req.body);
   if (!result.success) {
     res.status(400).json({ message: result.error.issues[0]?.message ?? 'Invalid input' });

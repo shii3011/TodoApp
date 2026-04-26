@@ -1,4 +1,4 @@
-import express, { type Request, type Response } from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -21,7 +21,19 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(helmet());
 app.use(cors({ origin: allowedOrigins }));
-app.use(express.json({ limit: '10kb' }));
+// serverless-http が req.body を Buffer としてセットする場合に JSON へパースする
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  if (Buffer.isBuffer(req.body)) {
+    try {
+      req.body = JSON.parse((req.body as Buffer).toString('utf8'));
+    } catch {
+      req.body = {};
+    }
+    next();
+  } else {
+    express.json({ limit: '10kb' })(req, _res, next);
+  }
+});
 if (process.env.NODE_ENV === 'production') {
   app.use(
     rateLimit({
