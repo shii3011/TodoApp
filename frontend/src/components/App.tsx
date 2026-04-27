@@ -8,6 +8,7 @@ import { apiFetch } from '../lib/api'
 import { useError } from '../context/ErrorContext'
 import { useTodosQuery } from '../hooks/todos'
 import { useTagsQuery } from '../hooks/tags'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import TagPanel from './TagPanel'
 import TodoCard from './TodoCard'
 import TodoFormComponent from './TodoForm'
@@ -31,6 +32,14 @@ export default function App({ signOut, user }: AppProps) {
 
   const { todos, isLoading } = useTodosQuery()
   const tags = useTagsQuery()
+
+  useKeyboardShortcuts({
+    onNewTodo: () => setShowForm(true),
+    onEscape: () => {
+      setShowForm(false)
+      setShowTagPanel(false)
+    },
+  })
 
   // タグが削除されたとき tagFilter を自動クリア
   useEffect(() => {

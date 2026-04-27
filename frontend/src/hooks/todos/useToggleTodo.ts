@@ -16,12 +16,23 @@ export function useToggleTodo() {
       if (!res.ok) throw new Error('TODOの更新に失敗しました')
       return res.json() as Promise<Todo>
     },
+    onMutate: async (todo: Todo) => {
+      await qc.cancelQueries({ queryKey: ['todos'] })
+      const previous = qc.getQueryData<Todo[]>(['todos'])
+      qc.setQueryData<Todo[]>(['todos'], prev =>
+        prev?.map(t => t.id === todo.id ? { ...t, completed: !todo.completed } : t) ?? []
+      )
+      return { previous }
+    },
+    onError: (_e: Error, _todo, context) => {
+      qc.setQueryData(['todos'], context?.previous)
+      onError('TODOの更新に失敗しました')
+    },
     onSuccess: (updated: Todo) => {
       qc.setQueryData<Todo[]>(['todos'], prev =>
         prev?.map(t => t.id === updated.id ? { ...updated, subtasks: t.subtasks } : t) ?? []
       )
     },
-    onError: (e: Error) => onError(e.message),
   })
 
   return (todo: Todo) => mutation.mutate(todo)

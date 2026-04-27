@@ -16,6 +16,22 @@ export function useToggleSubtask() {
       if (!res.ok) throw new Error('サブタスクの更新に失敗しました')
       return { updated: await res.json() as Todo, parentId }
     },
+    onMutate: async ({ parentId, subtask }) => {
+      await qc.cancelQueries({ queryKey: ['todos'] })
+      const previous = qc.getQueryData<Todo[]>(['todos'])
+      qc.setQueryData<Todo[]>(['todos'], prev =>
+        prev?.map(t =>
+          t.id === parentId
+            ? { ...t, subtasks: t.subtasks.map(s => s.id === subtask.id ? { ...s, completed: !subtask.completed } : s) }
+            : t
+        ) ?? []
+      )
+      return { previous }
+    },
+    onError: (_e: Error, _input, context) => {
+      qc.setQueryData(['todos'], context?.previous)
+      onError('サブタスクの更新に失敗しました')
+    },
     onSuccess: ({ updated, parentId }: { updated: Todo; parentId: string }) => {
       qc.setQueryData<Todo[]>(['todos'], prev =>
         prev?.map(t =>
@@ -23,7 +39,6 @@ export function useToggleSubtask() {
         ) ?? []
       )
     },
-    onError: (e: Error) => onError(e.message),
   })
 
   return (parentId: string, subtask: Todo) => mutation.mutate({ parentId, subtask })

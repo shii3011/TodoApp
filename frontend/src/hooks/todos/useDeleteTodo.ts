@@ -13,10 +13,16 @@ export function useDeleteTodo() {
       if (!res.ok) throw new Error('TODOの削除に失敗しました')
       return id
     },
-    onSuccess: (id: string) => {
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ['todos'] })
+      const previous = qc.getQueryData<Todo[]>(['todos'])
       qc.setQueryData<Todo[]>(['todos'], prev => prev?.filter(t => t.id !== id) ?? [])
+      return { previous }
     },
-    onError: (e: Error) => onError(e.message),
+    onError: (_e: Error, _id, context) => {
+      qc.setQueryData(['todos'], context?.previous)
+      onError('TODOの削除に失敗しました')
+    },
   })
 
   return (id: string) => mutation.mutate(id)
