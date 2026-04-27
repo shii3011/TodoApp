@@ -32,7 +32,7 @@
 
 > スクリーンショットまたはデモ GIF をここに追加予定
 
-本番 URL: `https://your-cloudfront-url.cloudfront.net`
+本番 URL: https://d2q20n1g6gr0p3.cloudfront.net/
 
 ---
 
