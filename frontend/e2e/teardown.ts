@@ -7,13 +7,19 @@ import { test } from '@playwright/test'
  * Playwright の teardown プロジェクトとして chromium プロジェクト終了後に実行される。
  *
  * API ベース URL の解決順:
- *   1. VITE_API_PROXY_TARGET が設定されている場合 → "/api"（Docker E2E: Vite proxy 経由）
+ *   1. PLAYWRIGHT_BASE_URL が Docker 内部ホスト（frontend:）を指す場合
+ *      → "/api"（Vite dev server の proxy 経由。ブラウザから直接 backend コンテナへ届く）
  *   2. E2E_API_BASE_URL が設定されている場合 → その値（CI 本番デプロイ後 E2E）
  *   3. フォールバック → "http://localhost:3000"（ローカル直接実行）
+ *
+ * 注意: VITE_API_PROXY_TARGET は docker-compose.yml に定義されているため、
+ * CI で `-e PLAYWRIGHT_BASE_URL=<CloudFront URL>` を渡した場合でも環境変数として残る。
+ * そのため PLAYWRIGHT_BASE_URL のホスト名で Docker 内部かどうかを判定する。
  */
-const API_BASE = process.env['VITE_API_PROXY_TARGET']
+const playwrightBaseUrl = process.env['PLAYWRIGHT_BASE_URL'] ?? ''
+const API_BASE = playwrightBaseUrl.includes('frontend:')
   ? '/api'
-  : (process.env['E2E_API_BASE_URL'] ?? 'http://localhost:3000')
+  : (process.env['E2E_API_BASE_URL'] ?? 'http://localhost:3000').replace(/\/$/, '')
 
 test('E2Eテストデータを削除する', async ({ page }) => {
   await page.goto('/')
