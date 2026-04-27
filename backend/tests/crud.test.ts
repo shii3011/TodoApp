@@ -213,3 +213,109 @@ describe('DELETE /todos/:id', () => {
     expect(res.status).toBe(404)
   })
 })
+
+// ==================== 認可テスト（クロスユーザーアクセス） ====================
+describe('クロスユーザーアクセス', () => {
+  const userA = 'test-user-a'
+  const userB = 'test-user-b'
+
+  function headers(userId: string) {
+    return { 'Content-Type': 'application/json', 'X-Test-User-Id': userId }
+  }
+
+  let todoId: string
+
+  // テストごとにユーザーAのTodoを作成し、テスト後に削除する
+  afterEach(async () => {
+    if (todoId) {
+      await fetch(`${BASE_URL}/todos/${todoId}`, {
+        method: 'DELETE',
+        headers: headers(userA),
+      }).catch(() => {})
+      todoId = ''
+    }
+  })
+
+  it('ユーザーBはユーザーAのTodoをGETできない（404）', async () => {
+    const createRes = await fetch(`${BASE_URL}/todos`, {
+      method: 'POST',
+      headers: headers(userA),
+      body: JSON.stringify({ title: 'ユーザーAのTodo' }),
+    })
+    const created = await createRes.json() as Todo
+    todoId = created.id
+
+    const res = await fetch(`${BASE_URL}/todos/${todoId}`, {
+      headers: headers(userB),
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it('ユーザーBはユーザーAのTodoをPUTできない（404）', async () => {
+    const createRes = await fetch(`${BASE_URL}/todos`, {
+      method: 'POST',
+      headers: headers(userA),
+      body: JSON.stringify({ title: 'ユーザーAのTodo' }),
+    })
+    const created = await createRes.json() as Todo
+    todoId = created.id
+
+    const res = await fetch(`${BASE_URL}/todos/${todoId}`, {
+      method: 'PUT',
+      headers: headers(userB),
+      body: JSON.stringify({ title: '書き換えたい', completed: false }),
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it('ユーザーBはユーザーAのTodoをPATCHできない（404）', async () => {
+    const createRes = await fetch(`${BASE_URL}/todos`, {
+      method: 'POST',
+      headers: headers(userA),
+      body: JSON.stringify({ title: 'ユーザーAのTodo' }),
+    })
+    const created = await createRes.json() as Todo
+    todoId = created.id
+
+    const res = await fetch(`${BASE_URL}/todos/${todoId}`, {
+      method: 'PATCH',
+      headers: headers(userB),
+      body: JSON.stringify({ completed: true }),
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it('ユーザーBはユーザーAのTodoをDELETEできない（404）', async () => {
+    const createRes = await fetch(`${BASE_URL}/todos`, {
+      method: 'POST',
+      headers: headers(userA),
+      body: JSON.stringify({ title: 'ユーザーAのTodo' }),
+    })
+    const created = await createRes.json() as Todo
+    todoId = created.id
+
+    const res = await fetch(`${BASE_URL}/todos/${todoId}`, {
+      method: 'DELETE',
+      headers: headers(userB),
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it('GET /todos はログインユーザー自身のTodoのみ返す', async () => {
+    // ユーザーAでTodo作成
+    const createRes = await fetch(`${BASE_URL}/todos`, {
+      method: 'POST',
+      headers: headers(userA),
+      body: JSON.stringify({ title: 'ユーザーAのTodo' }),
+    })
+    const created = await createRes.json() as Todo
+    todoId = created.id
+
+    // ユーザーBの一覧にユーザーAのTodoが含まれていないこと
+    const res = await fetch(`${BASE_URL}/todos`, { headers: headers(userB) })
+    const todos = await res.json() as Todo[]
+
+    expect(res.status).toBe(200)
+    expect(todos.every(t => t.id !== todoId)).toBe(true)
+  })
+})

@@ -32,6 +32,16 @@ export default defineConfig({
         storageState: SESSION_FILE,
       },
       dependencies: ['setup'],
+      // テスト完了後（成功・失敗問わず）に E2E データを削除する
+      teardown: 'cleanup',
+    },
+    {
+      name: 'cleanup',
+      testMatch: '**/teardown.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: SESSION_FILE,
+      },
     },
   ],
 })

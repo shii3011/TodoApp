@@ -4,10 +4,10 @@ WORKDIR /app
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=node:node package*.json ./
-RUN npm install
+RUN npm install && chown -R node:node /app/node_modules
 
 COPY --chown=node:node prisma ./prisma
-RUN npx prisma generate
+RUN npx prisma generate && chown -R node:node /app/node_modules
 
 COPY --chown=node:node . .
 

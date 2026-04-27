@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       app-url: ${{ steps.get-url.outputs.url }}
+      api-url: ${{ steps.get-url.outputs.api-url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +64,9 @@ jobs:
         name: Get deployed URL
         run: |
           URL=$(cat cdk-outputs.json | jq -r '.TodoAppStack.CloudFrontUrl')
+          API=$(cat cdk-outputs.json | jq -r '.TodoAppStack.ApiUrl')
           echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "api-url=$API" >> "$GITHUB_OUTPUT"
 
   # ── E2E テスト（デプロイ後に本番 URL に対して実行）──────────────
   e2e-test:
@@ -78,6 +81,7 @@ jobs:
         run: |
           docker compose --profile test run --rm \
             -e PLAYWRIGHT_BASE_URL=${{ needs.deploy.outputs.app-url }} \
+            -e E2E_API_BASE_URL=${{ needs.deploy.outputs.api-url }} \
             -e E2E_EMAIL=${{ secrets.E2E_EMAIL }} \
             -e E2E_PASSWORD=${{ secrets.E2E_PASSWORD }} \
             e2e
