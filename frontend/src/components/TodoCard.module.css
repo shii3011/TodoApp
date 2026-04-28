@@ -10,15 +10,14 @@
   opacity: 0.4;
 }
 
-/* ===== Priority stripe ===== */
+/* ===== Status stripe ===== */
 .priorityStripe {
   width: 3px;
   flex-shrink: 0;
 }
 
-.pHigh   { background: #0e90e8; }
-.pMedium { background: #7dd3fc; }
-.pLow    { background: #e0f2fe; }
+.pActive { background: #38a8f5; }
+.pDone   { background: #e0f2fe; }
 
 /* ===== Todo body ===== */
 .todoBody {

@@ -14,11 +14,6 @@ interface Props {
   todo: Todo
 }
 
-const PRIORITY_STRIPE_CLASS: Record<string, string> = {
-  high: styles.pHigh,
-  medium: styles.pMedium,
-  low: styles.pLow,
-}
 
 const BADGE_CLASS: Record<string, string> = {
   high: styles.badgeHigh,
@@ -113,7 +108,7 @@ export default function TodoCard({ todo }: Props) {
         </div>
       ) : (
         <>
-          <div className={`${styles.priorityStripe} ${PRIORITY_STRIPE_CLASS[todo.priority]}`} />
+          <div className={`${styles.priorityStripe} ${todo.completed ? styles.pDone : styles.pActive}`} />
           <div className={styles.todoBody}>
             {todo.dueDate && (() => {
               const { label, status, dateStr } = getDueDateInfo(todo.dueDate)
