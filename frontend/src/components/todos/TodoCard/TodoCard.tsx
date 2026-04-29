@@ -123,7 +123,10 @@ export default function TodoCard({ todo }: Props) {
               <label className={shared.checkLabel}>
                 <input type="checkbox" checked={todo.completed} onChange={() => updateTodoComplete(todo)} />
                 <span className={shared.checkBox} />
-                <span className={`${styles.todoTitle}${todo.completed ? ` ${shared.struck}` : ''}`}>
+                <span
+                  className={`${styles.todoTitle}${todo.completed ? ` ${shared.struck}` : ''}`}
+                  onClick={e => e.preventDefault()}
+                >
                   {todo.title}
                 </span>
               </label>

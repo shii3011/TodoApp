@@ -45,7 +45,10 @@ export default function SubtaskSection({ todo }: Props) {
                   onChange={() => updateSubtaskComplete(todo.id, subtask)}
                 />
                 <span className={`${shared.checkBox} ${shared.checkBoxSmall}`} />
-                <span className={`${styles.subtaskTitle}${subtask.completed ? ` ${shared.struck}` : ''}`}>
+                <span
+                  className={`${styles.subtaskTitle}${subtask.completed ? ` ${shared.struck}` : ''}`}
+                  onClick={e => e.preventDefault()}
+                >
                   {subtask.title}
                 </span>
               </label>

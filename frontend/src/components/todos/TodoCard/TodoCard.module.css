@@ -42,25 +42,12 @@
   white-space: nowrap;
 }
 
-/* ===== Todo actions (visible on hover) ===== */
+/* ===== Todo actions ===== */
 .todoActions {
   display: flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.todoCard:hover .todoActions {
-  opacity: 1;
-}
-
-/* タッチデバイスでは常に表示 */
-@media (hover: none) {
-  .todoActions {
-    opacity: 1;
-  }
 }
 
 /* ===== Priority badge ===== */
