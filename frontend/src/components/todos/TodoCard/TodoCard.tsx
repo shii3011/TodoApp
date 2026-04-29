@@ -27,7 +27,7 @@ const DUE_STATUS_CLASS: Record<string, string> = {
 }
 
 export default function TodoCard({ todo }: Props) {
-  const toggleComplete = useUpdateTodoComplete()
+  const updateTodoComplete = useUpdateTodoComplete()
   const updateTodo = useUpdateTodo()
   const deleteTodo = useDeleteTodo()
   const tags = useReadTags()
@@ -121,7 +121,7 @@ export default function TodoCard({ todo }: Props) {
             })()}
             <div className={styles.todoTop}>
               <label className={shared.checkLabel}>
-                <input type="checkbox" checked={todo.completed} onChange={() => toggleComplete(todo)} />
+                <input type="checkbox" checked={todo.completed} onChange={() => updateTodoComplete(todo)} />
                 <span className={shared.checkBox} />
                 <span className={`${styles.todoTitle}${todo.completed ? ` ${shared.struck}` : ''}`}>
                   {todo.title}

@@ -13,7 +13,7 @@ export default function SubtaskSection({ todo }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [subtaskInput, setSubtaskInput] = useState('')
   const createSubtask = useCreateSubtask()
-  const toggleSubtaskComplete = useUpdateSubtaskComplete()
+  const updateSubtaskComplete = useUpdateSubtaskComplete()
   const deleteSubtask = useDeleteSubtask()
 
   const handleCreate = () => {
@@ -42,7 +42,7 @@ export default function SubtaskSection({ todo }: Props) {
                 <input
                   type="checkbox"
                   checked={subtask.completed}
-                  onChange={() => toggleSubtaskComplete(todo.id, subtask)}
+                  onChange={() => updateSubtaskComplete(todo.id, subtask)}
                 />
                 <span className={`${shared.checkBox} ${shared.checkBoxSmall}`} />
                 <span className={`${styles.subtaskTitle}${subtask.completed ? ` ${shared.struck}` : ''}`}>

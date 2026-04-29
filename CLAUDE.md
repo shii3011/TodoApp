@@ -41,7 +41,7 @@ backend/src/
   lib/         (prisma.ts, errors.ts)
 
 frontend/src/
-  components/  hooks/  context/  lib/  types/  constants/  utils/
+  components/  hooks/  context/  lib/  types/  constants/  utils/  config/
 ```
 
 **IMPORTANT**: 依存の方向は `routes → controllers → services → lib` の一方向を厳守する。services は middleware に依存してはならない（`AppError` は `lib/errors.ts` に定義）。

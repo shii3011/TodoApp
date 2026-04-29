@@ -18,17 +18,25 @@ return res.json() as Promise<Todo>
 
 ```
 hooks/todos/
-  useTodosQuery.ts    # GET のみ
-  useCreateTodo.ts    # POST のみ
-  useUpdateTodo.ts    # PUT のみ
-  useToggleTodo.ts    # PATCH（完了トグル）のみ
-  useDeleteTodo.ts    # DELETE のみ
+  useReadTodos.ts              # GET のみ
+  useCreateTodo.ts             # POST のみ
+  useUpdateTodo.ts             # PUT のみ
+  useUpdateTodoComplete.ts     # PATCH（完了トグル）のみ
+  useDeleteTodo.ts             # DELETE のみ
+  useCreateSubtask.ts          # POST（サブタスク）のみ
+  useDeleteSubtask.ts          # DELETE（サブタスク）のみ
+  useUpdateSubtaskComplete.ts  # PATCH（サブタスク完了トグル）のみ
+  useTodosCache.ts             # キャッシュ操作ユーティリティ
+hooks/tags/
+  useReadTags.ts    # GET のみ
+  useCreateTag.ts   # POST のみ
+  useDeleteTag.ts   # DELETE のみ
 ```
 
 **Query フック** — `useQuery` を使い、データを返す：
 
 ```typescript
-export function useTodosQuery() {
+export function useReadTodos() {
   const { data: todos = [], isLoading } = useQuery({
     queryKey: ['todos'],
     queryFn: async (): Promise<Todo[]> => {
