@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Todo } from '../types'
 import { useCreateSubtask, useToggleSubtask, useDeleteSubtask } from '../hooks/todos'
+import { onEnter } from '../utils/keyboard'
 import styles from './SubtaskSection.module.css'
 import shared from './shared.module.css'
 
@@ -61,7 +62,7 @@ export default function SubtaskSection({ todo }: Props) {
               placeholder="サブタスクを追加..."
               value={subtaskInput}
               onChange={e => setSubtaskInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleCreate() }}
+              onKeyDown={onEnter(handleCreate)}
             />
             <button
               className={styles.subtaskAddBtn}

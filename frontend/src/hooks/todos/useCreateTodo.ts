@@ -1,11 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import type { Tag, Todo, TodoForm } from '../../types'
 import { apiFetch } from '../../lib/api'
-import { useSetError } from '../../context/ErrorContext'
+import { useTodosOptimistic } from './useTodosOptimistic'
 
 export function useCreateTodo() {
-  const onError = useSetError()
-  const qc = useQueryClient()
+  const { qc, snapshot, rollback } = useTodosOptimistic()
 
   const mutation = useMutation({
     mutationFn: async (form: TodoForm): Promise<Todo> => {
@@ -20,8 +19,7 @@ export function useCreateTodo() {
       return res.json() as Promise<Todo>
     },
     onMutate: async (form: TodoForm) => {
-      await qc.cancelQueries({ queryKey: ['todos'] })
-      const previous = qc.getQueryData<Todo[]>(['todos'])
+      const previous = await snapshot()
       const allTags = qc.getQueryData<Tag[]>(['tags']) ?? []
       const optimisticId = `optimistic-${Date.now()}`
       const optimistic: Todo = {
@@ -40,10 +38,7 @@ export function useCreateTodo() {
       qc.setQueryData<Todo[]>(['todos'], prev => [...(prev ?? []), optimistic])
       return { previous, optimisticId }
     },
-    onError: (_e: Error, _form, context) => {
-      qc.setQueryData(['todos'], context?.previous)
-      onError('TODOの作成に失敗しました')
-    },
+    onError: rollback('TODOの作成に失敗しました'),
     onSuccess: (todo: Todo, _form, context) => {
       // 仮 ID を実際のサーバー ID に置き換え
       qc.setQueryData<Todo[]>(['todos'], prev =>

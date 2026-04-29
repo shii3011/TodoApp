@@ -1,11 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import type { Todo } from '../../types'
 import { apiFetch } from '../../lib/api'
-import { useSetError } from '../../context/ErrorContext'
+import { useTodosOptimistic } from './useTodosOptimistic'
 
 export function useDeleteTodo() {
-  const onError = useSetError()
-  const qc = useQueryClient()
+  const { qc, snapshot, rollback } = useTodosOptimistic()
 
   const mutation = useMutation({
     mutationFn: async (id: string): Promise<string> => {
@@ -14,15 +13,11 @@ export function useDeleteTodo() {
       return id
     },
     onMutate: async (id: string) => {
-      await qc.cancelQueries({ queryKey: ['todos'] })
-      const previous = qc.getQueryData<Todo[]>(['todos'])
+      const previous = await snapshot()
       qc.setQueryData<Todo[]>(['todos'], prev => prev?.filter(t => t.id !== id) ?? [])
       return { previous }
     },
-    onError: (_e: Error, _id, context) => {
-      qc.setQueryData(['todos'], context?.previous)
-      onError('TODOの削除に失敗しました')
-    },
+    onError: rollback('TODOの削除に失敗しました'),
   })
 
   return (id: string) => mutation.mutate(id)

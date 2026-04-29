@@ -1,11 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import type { Todo } from '../../types'
 import { apiFetch } from '../../lib/api'
-import { useSetError } from '../../context/ErrorContext'
+import { useTodosOptimistic } from './useTodosOptimistic'
 
 export function useToggleSubtask() {
-  const onError = useSetError()
-  const qc = useQueryClient()
+  const { qc, snapshot, rollback } = useTodosOptimistic()
 
   const mutation = useMutation({
     mutationFn: async ({ parentId, subtask }: { parentId: string; subtask: Todo }): Promise<{ updated: Todo; parentId: string }> => {
@@ -17,8 +16,7 @@ export function useToggleSubtask() {
       return { updated: await res.json() as Todo, parentId }
     },
     onMutate: async ({ parentId, subtask }) => {
-      await qc.cancelQueries({ queryKey: ['todos'] })
-      const previous = qc.getQueryData<Todo[]>(['todos'])
+      const previous = await snapshot()
       qc.setQueryData<Todo[]>(['todos'], prev =>
         prev?.map(t =>
           t.id === parentId
@@ -28,10 +26,7 @@ export function useToggleSubtask() {
       )
       return { previous }
     },
-    onError: (_e: Error, _input, context) => {
-      qc.setQueryData(['todos'], context?.previous)
-      onError('サブタスクの更新に失敗しました')
-    },
+    onError: rollback('サブタスクの更新に失敗しました'),
     onSuccess: ({ updated, parentId }: { updated: Todo; parentId: string }) => {
       qc.setQueryData<Todo[]>(['todos'], prev =>
         prev?.map(t =>

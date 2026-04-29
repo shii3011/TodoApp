@@ -13,16 +13,17 @@ const TODO_INCLUDE = {
     include: { tags: { include: { tag: true } } },
     orderBy: { createdAt: 'asc' as const },
   },
-};
+} satisfies Prisma.TodoInclude;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatTodo(raw: any) {
+type RawTodo = Prisma.TodoGetPayload<{ include: typeof TODO_INCLUDE }>;
+
+function formatTodo(raw: RawTodo) {
   return {
     ...raw,
-    tags: (raw.tags ?? []).map((t: any) => t.tag),
-    subtasks: (raw.subtasks ?? []).map((s: any) => ({
+    tags: raw.tags.map(t => t.tag),
+    subtasks: raw.subtasks.map(s => ({
       ...s,
-      tags: (s.tags ?? []).map((t: any) => t.tag),
+      tags: s.tags.map(t => t.tag),
       subtasks: [],
     })),
   };

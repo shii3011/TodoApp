@@ -1,11 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import type { Tag, Todo, TodoForm } from '../../types'
 import { apiFetch } from '../../lib/api'
-import { useSetError } from '../../context/ErrorContext'
+import { useTodosOptimistic } from './useTodosOptimistic'
 
 export function useUpdateTodo() {
-  const onError = useSetError()
-  const qc = useQueryClient()
+  const { qc, snapshot, rollback } = useTodosOptimistic()
 
   const mutation = useMutation({
     mutationFn: async ({ id, form, completed }: { id: string; form: TodoForm; completed: boolean }): Promise<Todo> => {
@@ -21,8 +20,7 @@ export function useUpdateTodo() {
       return res.json() as Promise<Todo>
     },
     onMutate: async ({ id, form, completed }) => {
-      await qc.cancelQueries({ queryKey: ['todos'] })
-      const previous = qc.getQueryData<Todo[]>(['todos'])
+      const previous = await snapshot()
       const allTags = qc.getQueryData<Tag[]>(['tags']) ?? []
       const optimisticTags = allTags.filter(t => form.tagIds.includes(t.id))
       qc.setQueryData<Todo[]>(['todos'], prev =>
@@ -42,10 +40,7 @@ export function useUpdateTodo() {
       )
       return { previous }
     },
-    onError: (_e: Error, _input, context) => {
-      qc.setQueryData(['todos'], context?.previous)
-      onError('TODOの更新に失敗しました')
-    },
+    onError: rollback('TODOの更新に失敗しました'),
     onSuccess: (updated: Todo) => {
       qc.setQueryData<Todo[]>(['todos'], prev =>
         prev?.map(t => t.id === updated.id ? { ...updated, subtasks: t.subtasks } : t) ?? []
