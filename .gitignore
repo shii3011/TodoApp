@@ -5,6 +5,7 @@ docker-compose.override.yml
 
 # ローカルメモ
 INTERVIEW_NOTES.md
+求人票.md
 
 # CDK
 cdk-outputs.json
