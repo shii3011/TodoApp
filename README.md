@@ -17,6 +17,7 @@
 - [技術スタック](#技術スタック)
 - [アーキテクチャ](#アーキテクチャ)
 - [DB スキーマ](#db-スキーマ)
+- [ゲストモード](#ゲストモード)
 - [ローカル開発](#ローカル開発)
 - [テスト](#テスト)
 - [セキュリティ](#セキュリティ)
@@ -33,6 +34,41 @@
 > スクリーンショットまたはデモ GIF をここに追加予定
 
 本番 URL: https://d2q20n1g6gr0p3.cloudfront.net/
+
+---
+
+## ゲストモード
+
+登録・ログインなしで全機能を試せる**ゲストモード**を実装しています。ポートフォリオとして訪問者がすぐに触れるよう設計しました。
+
+| | ゲスト | ログイン済み |
+|--|--------|------------|
+| データの保存先 | ブラウザの localStorage | サーバー（PostgreSQL） |
+| 別デバイスから見える | ❌ | ✅ |
+| ブラウザのキャッシュ削除で消える | ✅ | ❌ |
+
+### Repository パターンによる実装
+
+データの保存先を **Repository インターフェース**で抽象化し、認証状態に応じて実装を注入しています。
+
+```
+TodoRepository（interface）
+  ├── ApiRepository          ← ログイン時: apiFetch 経由で PostgreSQL へ
+  └── LocalStorageRepository ← ゲスト時: ブラウザの localStorage へ
+```
+
+フックやコンポーネントは保存先を意識せず、`useRepository()` を呼ぶだけで正しい実装が注入されます。
+
+```typescript
+// RepositoryContext が認証状態に応じて自動切り替え
+const repos = isGuest ? localStorageRepositories : apiRepositories
+
+// hooks はどちらが注入されても同じコードで動く
+export function useCreateTodo() {
+  const { todos: repo } = useRepository()
+  // repo.create(form) が localStorage or API のどちらかを呼ぶ
+}
+```
 
 ---
 

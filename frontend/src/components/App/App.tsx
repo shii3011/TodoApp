@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import type { AuthUser } from 'aws-amplify/auth'
 import { fetchUserAttributes, fetchAuthSession } from 'aws-amplify/auth'
+import { useAuthenticator, Authenticator } from '@aws-amplify/ui-react'
 import type { CSSProperties } from 'react'
 import type { Priority, StatusFilter } from '../../types'
 import { getDueDateInfo } from '../../utils/dueDate'
@@ -13,12 +13,10 @@ import TodoFormComponent from '../todos/TodoForm/TodoForm'
 import styles from './App.module.css'
 import shared from '../shared.module.css'
 
-interface AppProps {
-  signOut?: () => void
-  user?: AuthUser
-}
-
-export default function App({ signOut, user }: AppProps) {
+export default function App() {
+  const { authStatus, user, signOut } = useAuthenticator(ctx => [ctx.authStatus, ctx.user, ctx.signOut])
+  const isGuest = authStatus !== 'authenticated'
+  const [showAuth, setShowAuth] = useState(false)
   const { error, setError } = useError()
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all')
@@ -39,6 +37,11 @@ export default function App({ signOut, user }: AppProps) {
     },
   })
 
+  // ログイン成功時にモーダルを閉じる
+  useEffect(() => {
+    if (!isGuest) setShowAuth(false)
+  }, [isGuest])
+
   // タグが削除されたとき tagFilter を自動クリア
   useEffect(() => {
     if (tagFilter && !tags.some(t => t.id === tagFilter)) {
@@ -53,8 +56,9 @@ export default function App({ signOut, user }: AppProps) {
     }
   }, [])
 
-  // ユーザー情報をDBへ同期
+  // ユーザー情報をDBへ同期（ログイン済みのみ）
   useEffect(() => {
+    if (isGuest) return
     const syncUser = async () => {
       try {
         const [attrs, session] = await Promise.all([fetchUserAttributes(), fetchAuthSession()])
@@ -70,7 +74,7 @@ export default function App({ signOut, user }: AppProps) {
       } catch { /* 同期失敗は無視 */ }
     }
     void syncUser()
-  }, [])
+  }, [isGuest])
 
   // 期限通知（5分ごと）
   useEffect(() => {
@@ -143,8 +147,14 @@ export default function App({ signOut, user }: AppProps) {
               </span>
             </div>
             <div className={styles.userArea}>
-              <span className={styles.userName}>{user?.signInDetails?.loginId ?? user?.username}</span>
-              <button className={styles.signoutBtn} onClick={signOut}>ログアウト</button>
+              {isGuest ? (
+                <button className={styles.loginBtn} onClick={() => setShowAuth(true)}>ログイン / 登録</button>
+              ) : (
+                <>
+                  <span className={styles.userName}>{user?.signInDetails?.loginId ?? user?.username}</span>
+                  <button className={styles.signoutBtn} onClick={signOut}>ログアウト</button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -213,6 +223,15 @@ export default function App({ signOut, user }: AppProps) {
         </div>
 
         {showTagPanel && <TagPanel />}
+
+        {showAuth && (
+          <div className={styles.authOverlay} onClick={() => setShowAuth(false)}>
+            <div className={styles.authModal} onClick={e => e.stopPropagation()}>
+              <button className={styles.authClose} onClick={() => setShowAuth(false)}>×</button>
+              <Authenticator />
+            </div>
+          </div>
+        )}
 
         {showForm && <TodoFormComponent onSuccess={() => setShowForm(false)} />}
 

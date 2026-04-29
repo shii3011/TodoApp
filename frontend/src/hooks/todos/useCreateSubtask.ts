@@ -1,16 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import type { Todo } from '../../types'
-import { apiFetch } from '../../lib/api'
+import { useRepository } from '../../context/RepositoryContext'
 import { useTodosCache } from './useTodosCache'
-
-async function postSubtask(parentId: string, title: string): Promise<{ subtask: Todo; parentId: string }> {
-  const res = await apiFetch('/todos', {
-    method: 'POST',
-    body: JSON.stringify({ title, description: '', priority: 'medium', tagIds: [], parentId }),
-  })
-  if (!res.ok) throw new Error('サブタスクの作成に失敗しました')
-  return { subtask: await res.json() as Todo, parentId }
-}
 
 function buildOptimisticSubtask(parentId: string, title: string): Todo {
   return {
@@ -29,15 +20,14 @@ function buildOptimisticSubtask(parentId: string, title: string): Todo {
 }
 
 export function useCreateSubtask() {
+  const { todos: repo } = useRepository()
   const { qc, snapshot, rollback } = useTodosCache()
 
   const handleMutate = async ({ parentId, title }: { parentId: string; title: string }) => {
     const previous = await snapshot()
     const optimistic = buildOptimisticSubtask(parentId, title)
     qc.setQueryData<Todo[]>(['todos'], prev =>
-      prev?.map(t =>
-        t.id === parentId ? { ...t, subtasks: [...t.subtasks, optimistic] } : t
-      ) ?? []
+      prev?.map(t => t.id === parentId ? { ...t, subtasks: [...t.subtasks, optimistic] } : t) ?? []
     )
     return { previous, optimisticId: optimistic.id }
   }
@@ -57,7 +47,7 @@ export function useCreateSubtask() {
   }
 
   const mutation = useMutation({
-    mutationFn: ({ parentId, title }) => postSubtask(parentId, title),
+    mutationFn: ({ parentId, title }) => repo.createSubtask(parentId, title),
     onMutate: handleMutate,
     onError: rollback('サブタスクの作成に失敗しました'),
     onSuccess: handleSuccess,

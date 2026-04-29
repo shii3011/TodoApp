@@ -1,14 +1,10 @@
 import { useMutation } from '@tanstack/react-query'
 import type { Todo } from '../../types'
-import { apiFetch } from '../../lib/api'
+import { useRepository } from '../../context/RepositoryContext'
 import { useTodosCache } from './useTodosCache'
 
-async function deleteSubtaskApi(subtaskId: string): Promise<void> {
-  const res = await apiFetch(`/todos/${subtaskId}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('サブタスクの削除に失敗しました')
-}
-
 export function useDeleteSubtask() {
+  const { todos: repo } = useRepository()
   const { qc, snapshot, rollback } = useTodosCache()
 
   const handleMutate = async ({ parentId, subtaskId }: { parentId: string; subtaskId: string }) => {
@@ -22,7 +18,7 @@ export function useDeleteSubtask() {
   }
 
   const mutation = useMutation({
-    mutationFn: ({ subtaskId }) => deleteSubtaskApi(subtaskId),
+    mutationFn: ({ subtaskId }) => repo.deleteSubtask(subtaskId),
     onMutate: handleMutate,
     onError: rollback('サブタスクの削除に失敗しました'),
   })

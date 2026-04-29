@@ -1,18 +1,10 @@
 import { useMutation } from '@tanstack/react-query'
 import type { Todo } from '../../types'
-import { apiFetch } from '../../lib/api'
+import { useRepository } from '../../context/RepositoryContext'
 import { replaceTodoKeepingSubtasks, useTodosCache } from './useTodosCache'
 
-async function patchTodoCompleted(id: string, completed: boolean): Promise<Todo> {
-  const res = await apiFetch(`/todos/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ completed }),
-  })
-  if (!res.ok) throw new Error('TODOの更新に失敗しました')
-  return res.json() as Promise<Todo>
-}
-
 export function useUpdateTodoComplete() {
+  const { todos: repo } = useRepository()
   const { qc, snapshot, rollback } = useTodosCache()
 
   const handleMutate = async (todo: Todo) => {
@@ -24,7 +16,7 @@ export function useUpdateTodoComplete() {
   }
 
   const mutation = useMutation({
-    mutationFn: (todo: Todo) => patchTodoCompleted(todo.id, !todo.completed),
+    mutationFn: (todo: Todo) => repo.patchCompleted(todo.id, !todo.completed),
     onMutate: handleMutate,
     onError: rollback('TODOの更新に失敗しました'),
     onSuccess: (updated) => qc.setQueryData<Todo[]>(['todos'], replaceTodoKeepingSubtasks(updated)),

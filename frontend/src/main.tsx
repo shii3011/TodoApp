@@ -6,6 +6,7 @@ import '@aws-amplify/ui-react/styles.css'
 import './config/awsConfig'
 import './index.css'
 import { ErrorProvider } from './context/ErrorContext'
+import { RepositoryProvider } from './context/RepositoryContext'
 import App from './components/App/App'
 
 const queryClient = new QueryClient()
@@ -13,11 +14,13 @@ const queryClient = new QueryClient()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ErrorProvider>
-        <Authenticator>
-          {({ signOut, user }) => <App signOut={signOut} user={user} />}
-        </Authenticator>
-      </ErrorProvider>
+      <Authenticator.Provider>
+        <ErrorProvider>
+          <RepositoryProvider>
+            <App />
+          </RepositoryProvider>
+        </ErrorProvider>
+      </Authenticator.Provider>
     </QueryClientProvider>
   </StrictMode>,
 )
