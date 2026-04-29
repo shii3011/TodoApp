@@ -1,19 +1,17 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
-import type { Todo, TodoForm, Priority } from '../types'
-import { PRIORITY_CONFIG } from '../constants'
-import { getDueDateInfo } from '../utils/dueDate'
-import { useToggleTodo, useUpdateTodo, useDeleteTodo } from '../hooks/todos'
-import { useTagsQuery } from '../hooks/tags'
-import TagSelector from './TagSelector'
-import SubtaskSection from './SubtaskSection'
+import type { Todo, TodoForm, Priority } from '../../../types'
+import { PRIORITY_CONFIG } from '../../../constants'
+import { getDueDateInfo } from '../../../utils/dueDate'
+import { useUpdateTodoComplete, useUpdateTodo, useDeleteTodo, useReadTags } from '../../../hooks'
+import TagSelector from '../../tags/TagSelector/TagSelector'
+import SubtaskSection from '../SubtaskSection/SubtaskSection'
 import styles from './TodoCard.module.css'
-import shared from './shared.module.css'
+import shared from '../../shared.module.css'
 
 interface Props {
   todo: Todo
 }
-
 
 const BADGE_CLASS: Record<string, string> = {
   high: styles.badgeHigh,
@@ -29,10 +27,10 @@ const DUE_STATUS_CLASS: Record<string, string> = {
 }
 
 export default function TodoCard({ todo }: Props) {
-  const toggleComplete = useToggleTodo()
+  const toggleComplete = useUpdateTodoComplete()
   const updateTodo = useUpdateTodo()
   const deleteTodo = useDeleteTodo()
-  const tags = useTagsQuery()
+  const tags = useReadTags()
 
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState<TodoForm>({

@@ -2,18 +2,16 @@ import { useState, useEffect, useRef } from 'react'
 import type { AuthUser } from 'aws-amplify/auth'
 import { fetchUserAttributes, fetchAuthSession } from 'aws-amplify/auth'
 import type { CSSProperties } from 'react'
-import type { Priority, StatusFilter } from '../types'
-import { getDueDateInfo } from '../utils/dueDate'
-import { apiFetch } from '../lib/api'
-import { useError } from '../context/ErrorContext'
-import { useTodosQuery } from '../hooks/todos'
-import { useTagsQuery } from '../hooks/tags'
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import TagPanel from './TagPanel'
-import TodoCard from './TodoCard'
-import TodoFormComponent from './TodoForm'
+import type { Priority, StatusFilter } from '../../types'
+import { getDueDateInfo } from '../../utils/dueDate'
+import { apiFetch } from '../../lib/api'
+import { useError } from '../../context/ErrorContext'
+import { useReadTodos, useReadTags, useKeyboardShortcuts } from '../../hooks'
+import TagPanel from '../tags/TagPanel/TagPanel'
+import TodoCard from '../todos/TodoCard/TodoCard'
+import TodoFormComponent from '../todos/TodoForm/TodoForm'
 import styles from './App.module.css'
-import shared from './shared.module.css'
+import shared from '../shared.module.css'
 
 interface AppProps {
   signOut?: () => void
@@ -30,8 +28,8 @@ export default function App({ signOut, user }: AppProps) {
   const [showTagPanel, setShowTagPanel] = useState<boolean>(false)
   const notifiedIds = useRef<Set<string>>(new Set())
 
-  const { todos, isLoading } = useTodosQuery()
-  const tags = useTagsQuery()
+  const { todos, isLoading } = useReadTodos()
+  const tags = useReadTags()
 
   useKeyboardShortcuts({
     onNewTodo: () => setShowForm(true),

@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import type { Todo } from '../types'
-import { useCreateSubtask, useToggleSubtask, useDeleteSubtask } from '../hooks/todos'
-import { onEnter } from '../utils/keyboard'
+import type { Todo } from '../../../types'
+import { useCreateSubtask, useUpdateSubtaskComplete, useDeleteSubtask } from '../../../hooks'
+import { onEnter } from '../../../utils/keyboard'
 import styles from './SubtaskSection.module.css'
-import shared from './shared.module.css'
+import shared from '../../shared.module.css'
 
 interface Props {
   todo: Todo
@@ -13,7 +13,7 @@ export default function SubtaskSection({ todo }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [subtaskInput, setSubtaskInput] = useState('')
   const createSubtask = useCreateSubtask()
-  const toggleSubtaskComplete = useToggleSubtask()
+  const toggleSubtaskComplete = useUpdateSubtaskComplete()
   const deleteSubtask = useDeleteSubtask()
 
   const handleCreate = () => {

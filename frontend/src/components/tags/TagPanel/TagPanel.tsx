@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
-import { TAG_COLORS } from '../constants'
-import { useTagsQuery, useCreateTag, useDeleteTag } from '../hooks/tags'
+import { TAG_COLORS } from '../../../constants'
+import { useReadTags, useCreateTag, useDeleteTag } from '../../../hooks'
 import styles from './TagPanel.module.css'
-import shared from './shared.module.css'
+import shared from '../../shared.module.css'
 
 export default function TagPanel() {
-  const tags = useTagsQuery()
+  const tags = useReadTags()
   const createTag = useCreateTag()
   const deleteTag = useDeleteTag()
   const [tagForm, setTagForm] = useState<{ name: string; color: string }>({ name: '', color: TAG_COLORS[0] })

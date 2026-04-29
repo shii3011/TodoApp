@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
-import type { Tag } from '../types'
+import type { Tag } from '../../../types'
 import styles from './TagSelector.module.css'
-import shared from './shared.module.css'
+import shared from '../../shared.module.css'
 
 interface Props {
   tags: Tag[]

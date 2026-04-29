@@ -3,12 +3,12 @@ import type { Todo } from '../../types'
 import { useSetError } from '../../context/ErrorContext'
 
 /**
- * todos キャッシュに対する楽観的更新の共通処理を提供する。
+ * todos キャッシュに対する共通操作を提供する。
  *
  * snapshot(): 進行中クエリをキャンセルし、現在のキャッシュを返す（onMutate 用）
  * rollback(message): onError 時にキャッシュを復元してエラーを表示する
  */
-export function useTodosOptimistic() {
+export function useTodosCache() {
   const qc = useQueryClient()
   const setError = useSetError()
 
@@ -25,4 +25,14 @@ export function useTodosOptimistic() {
     }
 
   return { qc, snapshot, rollback }
+}
+
+/**
+ * サーバーから返った Todo でキャッシュを更新する。
+ * subtasks はサーバーレスポンスに含まれないため、既存の値を保持する。
+ * useToggleTodoComplete / useUpdateTodo の onSuccess で共通利用。
+ */
+export function replaceTodoKeepingSubtasks(updated: Todo) {
+  return (prev: Todo[] | undefined) =>
+    prev?.map(t => t.id === updated.id ? { ...updated, subtasks: t.subtasks } : t) ?? []
 }

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { Todo } from '../../types'
 import { apiFetch } from '../../lib/api'
 
-export function useTodosQuery() {
+export function useReadTodos() {
   const { data: todos = [], isLoading } = useQuery({
     queryKey: ['todos'],
     queryFn: async (): Promise<Todo[]> => {

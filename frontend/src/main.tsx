@@ -6,7 +6,7 @@ import '@aws-amplify/ui-react/styles.css'
 import './config/awsConfig'
 import './index.css'
 import { ErrorProvider } from './context/ErrorContext'
-import App from './components/App.tsx'
+import App from './components/App/App'
 
 const queryClient = new QueryClient()
 

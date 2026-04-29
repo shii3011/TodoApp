@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import type { TodoForm as TodoFormType, Priority } from '../types'
-import { EMPTY_FORM } from '../constants'
-import { useCreateTodo } from '../hooks/todos'
-import { useTagsQuery } from '../hooks/tags'
-import TagSelector from './TagSelector'
+import type { TodoForm as TodoFormType, Priority } from '../../../types'
+import { EMPTY_FORM } from '../../../constants'
+import { useCreateTodo, useReadTags } from '../../../hooks'
+import TagSelector from '../../tags/TagSelector/TagSelector'
 import styles from './TodoForm.module.css'
-import shared from './shared.module.css'
+import shared from '../../shared.module.css'
 
 interface Props {
   onSuccess: () => void
@@ -13,7 +12,7 @@ interface Props {
 
 export default function TodoForm({ onSuccess }: Props) {
   const createTodo = useCreateTodo()
-  const tags = useTagsQuery()
+  const tags = useReadTags()
   const [form, setForm] = useState<TodoFormType>(EMPTY_FORM)
 
   const handleSubmit = () => {

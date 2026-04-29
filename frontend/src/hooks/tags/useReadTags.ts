@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { Tag } from '../../types'
 import { apiFetch } from '../../lib/api'
 
-export function useTagsQuery() {
+export function useReadTags() {
   const { data: tags = [] } = useQuery({
     queryKey: ['tags'],
     queryFn: async (): Promise<Tag[]> => {
