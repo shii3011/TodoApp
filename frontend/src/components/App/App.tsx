@@ -96,15 +96,22 @@ export default function App({ signOut, user }: AppProps) {
     return () => clearInterval(timer)
   }, [todos])
 
-  const filteredTodos = todos.filter(todo => {
-    const statusOk = filter === 'all' || (filter === 'active' ? !todo.completed : todo.completed)
-    const priorityOk = priorityFilter === 'all' || todo.priority === priorityFilter
-    const tagOk = !tagFilter || todo.tags.some(t => t.id === tagFilter)
-    const searchOk = !searchQuery ||
-      todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      todo.description.toLowerCase().includes(searchQuery.toLowerCase())
-    return statusOk && priorityOk && tagOk && searchOk
-  })
+  const PRIORITY_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 }
+
+  const filteredTodos = todos
+    .filter(todo => {
+      const statusOk = filter === 'all' || (filter === 'active' ? !todo.completed : todo.completed)
+      const priorityOk = priorityFilter === 'all' || todo.priority === priorityFilter
+      const tagOk = !tagFilter || todo.tags.some(t => t.id === tagFilter)
+      const searchOk = !searchQuery ||
+        todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        todo.description.toLowerCase().includes(searchQuery.toLowerCase())
+      return statusOk && priorityOk && tagOk && searchOk
+    })
+    .sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1
+      return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
+    })
 
   const stats = {
     total: todos.length,
