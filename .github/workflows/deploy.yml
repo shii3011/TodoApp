@@ -9,9 +9,44 @@ permissions:
   contents: read
 
 jobs:
+  # ── ユニットテスト ────────────────────────────────────────────────
+  backend-unit:
+    name: Backend Unit Tests (Zod schemas)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run unit tests via Docker Compose
+        run: docker compose --profile test run --rm backend-test
+
+  # ── 結合テスト ────────────────────────────────────────────────────
+  backend-integration:
+    name: Backend Integration Tests (HTTP CRUD + concurrent)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run integration tests via Docker Compose
+        run: docker compose --profile test run --rm backend-test-integration
+
+  # ── 型チェック ────────────────────────────────────────────────────
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx tsc --noEmit -p config/tsconfig.app.json
+        working-directory: frontend
+
   deploy:
     name: CDK Deploy + Frontend Upload
     runs-on: ubuntu-latest
+    needs: [backend-unit, backend-integration, typecheck]
     outputs:
       app-url: ${{ steps.get-url.outputs.url }}
       api-url: ${{ steps.get-url.outputs.api-url }}
