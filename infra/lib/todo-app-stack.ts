@@ -11,6 +11,8 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
 import * as path from 'path';
+import * as fs from 'fs';
+import { execSync } from 'child_process';
 
 export class TodoAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -81,6 +83,30 @@ export class TodoAppStack extends cdk.Stack {
       handler: 'dist/lambda.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../backend'), {
         bundling: {
+          // CI でバックエンドが事前ビルド済みの場合はローカルバンドリングを使用（Docker 不要）
+          // ローカル開発など dist/ がない場合は Docker にフォールバック
+          local: {
+            tryBundle(outputDir: string): boolean {
+              const backendDir = path.join(__dirname, '../../backend');
+              if (!fs.existsSync(path.join(backendDir, 'dist'))) return false;
+              try {
+                const cleanup = [
+                  `find ${outputDir}/node_modules/.prisma/client -name "libquery_engine*" ! -name "*rhel*" -delete 2>/dev/null || true`,
+                  `find ${outputDir}/node_modules/@prisma/engines -name "libquery_engine*" ! -name "*rhel*" -delete 2>/dev/null || true`,
+                  `find ${outputDir}/node_modules -name "*.map" -delete 2>/dev/null || true`,
+                  `find ${outputDir}/node_modules -name "*.d.ts" -delete 2>/dev/null || true`,
+                  `find ${outputDir}/node_modules -name "*.md" -delete 2>/dev/null || true`,
+                  `find ${outputDir}/node_modules -name "CHANGELOG*" -delete 2>/dev/null || true`,
+                  `find ${outputDir}/node_modules -name "LICENSE" -delete 2>/dev/null || true`,
+                  `rm -rf ${outputDir}/src ${outputDir}/tests ${outputDir}/prisma/migrations`,
+                ].join(' && ');
+                execSync(`cp -rL ${backendDir}/. ${outputDir}/ && rm -f ${outputDir}/.env ${outputDir}/.env.* && ${cleanup}`, { stdio: 'inherit' });
+                return true;
+              } catch {
+                return false;
+              }
+            },
+          },
           image: cdk.DockerImage.fromRegistry('public.ecr.aws/docker/library/node:20-slim'),
           command: [
             'bash', '-c',
@@ -93,7 +119,6 @@ export class TodoAppStack extends cdk.Stack {
               'npx prisma generate',
               'npm run build',
               'npm prune --omit=dev',
-              // Lambda に不要なファイルを削除してサイズを 250MB 以内に収める
               'find node_modules/.prisma/client -name "libquery_engine*" ! -name "*rhel*" -delete 2>/dev/null || true',
               'find node_modules/@prisma/engines -name "libquery_engine*" ! -name "*rhel*" -delete 2>/dev/null || true',
               'find node_modules -name "*.map" -delete 2>/dev/null || true',
