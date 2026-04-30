@@ -23,6 +23,7 @@ body {
   --amplify-colors-brand-primary-80: #0e90e8;
   --amplify-colors-brand-primary-90: #0077cc;
   --amplify-colors-brand-primary-100: #005fa3;
+  --amplify-components-authenticator-width: 100%;
   --amplify-components-authenticator-router-border-width: 0;
   --amplify-components-authenticator-router-box-shadow: 0 8px 40px rgba(14, 144, 232, 0.12);
   --amplify-components-button-primary-background-color: #38a8f5;
@@ -30,8 +31,6 @@ body {
   --amplify-components-button-primary-active-background-color: #0077cc;
   --amplify-components-fieldcontrol-focus-border-color: #38a8f5;
   --amplify-components-fieldcontrol-focus-box-shadow: 0 0 0 3px rgba(56, 168, 245, 0.15);
-  min-height: 100vh;
-  background: linear-gradient(145deg, #e8f6ff 0%, #f0f9ff 50%, #e0f2fe 100%);
 }
 
 [data-amplify-authenticator] [data-amplify-router] {
