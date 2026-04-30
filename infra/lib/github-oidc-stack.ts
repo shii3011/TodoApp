@@ -95,6 +95,14 @@ export class GitHubOidcStack extends cdk.Stack {
               ],
               resources: ['*'],
             }),
+            // ECR Public（CDK の Lambda バンドル時に node:20-slim を pull するために必要）
+            new iam.PolicyStatement({
+              actions: [
+                'ecr-public:GetAuthorizationToken',
+                'sts:GetServiceBearerToken',
+              ],
+              resources: ['*'],
+            }),
           ],
         }),
       },
