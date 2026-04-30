@@ -78,7 +78,7 @@ export async function createTodo(
   if (data.tagIds?.length) await validateTagIds(data.tagIds, userId);
   if (data.parentId) {
     const parent = await prisma.todo.findFirst({ where: { id: data.parentId, userId } });
-    if (!parent) throw new AppError(400, 'Invalid parent todo');
+    if (!parent || parent.parentId !== null) throw new AppError(400, 'Invalid parent todo');
   }
   const todo = await prisma.todo.create({
     data: {

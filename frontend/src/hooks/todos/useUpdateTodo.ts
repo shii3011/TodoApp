@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import type { Tag, Todo, TodoForm } from '../../types'
 import { useRepository } from '../../context/RepositoryContext'
-import { replaceTodoKeepingSubtasks, useTodosCache } from './useTodosCache'
+import { replaceTodo, useTodosCache } from './useTodosCache'
 
 export function useUpdateTodo() {
   const { todos: repo } = useRepository()
@@ -32,7 +32,7 @@ export function useUpdateTodo() {
     mutationFn: ({ id, form, completed }) => repo.update(id, form, completed),
     onMutate: handleMutate,
     onError: rollback('TODOの更新に失敗しました'),
-    onSuccess: (updated) => qc.setQueryData<Todo[]>(['todos'], replaceTodoKeepingSubtasks(updated)),
+    onSuccess: (updated) => qc.setQueryData<Todo[]>(['todos'], replaceTodo(updated)),
   })
 
   return (id: string, form: TodoForm, completed: boolean) => mutation.mutate({ id, form, completed })

@@ -29,10 +29,9 @@ export function useTodosCache() {
 
 /**
  * サーバーから返った Todo でキャッシュを更新する。
- * subtasks はサーバーレスポンスに含まれないため、既存の値を保持する。
- * useToggleTodoComplete / useUpdateTodo の onSuccess で共通利用。
+ * useUpdateTodoComplete / useUpdateTodo の onSuccess で共通利用。
  */
-export function replaceTodoKeepingSubtasks(updated: Todo) {
+export function replaceTodo(updated: Todo) {
   return (prev: Todo[] | undefined) =>
-    prev?.map(t => t.id === updated.id ? { ...updated, subtasks: t.subtasks } : t) ?? []
+    prev?.map(t => t.id === updated.id ? updated : t) ?? []
 }
