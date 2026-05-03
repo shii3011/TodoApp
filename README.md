@@ -423,17 +423,42 @@ aws cognito-idp admin-set-user-password \
 
 ## セキュリティ
 
+### 機密情報の管理
+
+**絶対にリポジトリにコミットしてはいけないファイル**（`.gitignore` で除外済み）:
+
+```
+.env
+.env.*
+docker-compose.override.yml   # E2E_EMAIL / E2E_PASSWORD を含む
+```
+
+**機密情報の保存場所**:
+
+| 情報 | ローカル開発 | 本番（AWS） |
+|------|------------|------------|
+| `DATABASE_URL` | `docker-compose.yml`（ローカル DB を指す） | SSM Parameter Store（SecureString / KMS 暗号化） |
+| `E2E_EMAIL` / `E2E_PASSWORD` | `docker-compose.override.yml` | GitHub Secrets |
+| `AWS_ROLE_ARN` | 不要 | GitHub Secrets |
+| Cognito User Pool ID / Client ID | `docker-compose.yml`（ローカル認証バイパス） | CDK デプロイ時に自動生成・S3/SSM へ出力 |
+
+本番の Lambda は起動時に SSM Parameter Store から `DATABASE_URL` を取得します。AWS アクセスキーはコード・環境変数のいずれにも存在しません（IAM ロールを使用）。
+
+GitHub Actions は OIDC 認証で AWS へアクセスするため、長期アクセスキー（`AWS_ACCESS_KEY_ID` 等）は一切使用していません。
+
+### セキュリティ対策一覧
+
 | 対策 | 実装方法 |
 |------|---------|
-| **シークレット管理** | `DATABASE_URL` は SSM Parameter Store の SecureString（KMS 暗号化）で管理 |
 | **認証** | `aws-jwt-verify` で Cognito JWT の署名・有効期限・発行元を検証 |
+| **認可** | 他ユーザーのリソースへのアクセスは 404 で返す（存在を推測させない） |
+| **入力バリデーション** | 全エンドポイントで Zod スキーマを通過させてからサービス層へ |
 | **レートリミット（アプリ）** | IP ベース（200 req/15 分）+ ユーザー ID ベース（100 req/15 分）の二重防護 |
 | **レートリミット（API GW）** | バースト 50 req / 秒間 20 req でスロットリング |
 | **WAF** | AWS マネージドルール（Common・KnownBadInputs）で SQLi / XSS をブロック |
-| **アクセスログ** | API Gateway のアクセスログを CloudWatch に 1 ヶ月保持 |
 | **セキュリティヘッダー** | `helmet` で CSP・X-Frame-Options・HSTS 等を自動設定 |
-| **入力バリデーション** | 全エンドポイントで Zod スキーマを通過させてからサービス層へ |
 | **CORS** | `ALLOWED_ORIGINS` 環境変数で許可オリジンを明示管理 |
+| **アクセスログ** | API Gateway のアクセスログを CloudWatch に 1 ヶ月保持 |
 | **GitHub Actions** | OIDC 認証で長期アクセスキーを排除。main ブランチのみ Assume 可 |
 | **DDoS 保護** | AWS Shield Standard（L3/L4）が自動適用 |
 
