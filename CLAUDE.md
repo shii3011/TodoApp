@@ -35,16 +35,30 @@ cd backend  && npm run build
 
 ```
 backend/src/
-  routes/ → controllers/ → services/ → lib/prisma.ts
-  middleware/  (auth, errorHandler)
-  schemas/     (Zod バリデーション)
-  lib/         (prisma.ts, errors.ts)
+  routes/ → controllers/{todos,tags,users}/ → services/{todos,tags,users}/ → repositories/{todos,tags,users}/ → lib/prisma.ts
+  middleware/              (auth, errorHandler)
+  schemas/                 (Zod バリデーション)
+  repositories/{domain}/   (types.ts + xxxPrismaRepository.ts)
+  services/{domain}/       (xxxService.ts + index.ts)
+  controllers/{domain}/    (xxxController.ts)
+  lib/                     (prisma.ts, errors.ts, todoFormat.ts)
 
 frontend/src/
-  components/  hooks/  context/  lib/  types/  constants/  utils/  config/
+  features/
+    todos/   types.ts + hooks/ + components/
+    tags/    types.ts + hooks/ + components/
+  shared/    types.ts, constants/, utils/, hooks/, components/
+  context/   (ErrorContext, RepositoryContext)
+  lib/       (api.ts, repositories/)
+  components/App/
+  config/
 ```
 
-**IMPORTANT**: 依存の方向は `routes → controllers → services → lib` の一方向を厳守する。services は middleware に依存してはならない（`AppError` は `lib/errors.ts` に定義）。
+**IMPORTANT**: 依存の方向は `routes → controllers → services → repositories → lib` の一方向を厳守する。services は middleware に依存してはならない（`AppError` は `lib/errors.ts` に定義）。
+
+- **services**: ビジネスロジック・業務チェックのみ。Prisma を直接呼ばない
+- **repositories**: Prisma アクセス・トランザクション・ロックを担う。`createXxxService(repo)` で DI する
+- テスト時は `createXxxService(mockRepo)` でリポジトリを差し替え、DB なしでサービス層をテスト可能
 
 ---
 
@@ -80,10 +94,11 @@ import { AppError } from '../lib/errors';         // ❌ ESM エラーになる
 
 | 種別 | 場所 | 何をテストするか |
 |------|------|----------------|
-| ユニット | `backend/tests/schemas.test.ts` | Zod スキーマの境界値 |
-| 統合 | `backend/tests/crud.test.ts` | エンドポイントの正常系・異常系 |
-| 統合 | `backend/tests/concurrent.test.ts` | 並列アクセスの整合性 |
-| E2E | `frontend/e2e/todo.spec.ts` | ユーザー操作フロー |
+| ユニット | `backend/tests/unit/` | Zod スキーマの境界値・バリデーション |
+| 統合 | `backend/tests/integration/` | エンドポイントの正常系・異常系・並列整合性 |
+| E2E | `frontend/e2e/` | ユーザー操作フロー |
+
+各テストフォルダの詳細規約は配下の `CLAUDE.md` を参照。
 
 **IMPORTANT**: DB をモックしない。統合テストは実 DB に対して HTTP リクエストを投げる。テスト用の認証バイパスは `NODE_ENV=test` かつ `AWS_LAMBDA_FUNCTION_NAME` 未設定の場合のみ有効。
 
@@ -115,7 +130,7 @@ import { AppError } from '../lib/errors';         // ❌ ESM エラーになる
 **IMPORTANT**: 以下は過去に繰り返し発生したミスのリスト。必ず確認すること。
 
 1. バックエンドで `.js` 拡張子を省略する → ESM エラーになる
-2. コントローラーから直接 Prisma を呼ぶ → `services/` 経由にする
+2. コントローラーから直接 Prisma を呼ぶ → `services/` 経由にする（サービスも直接 Prisma を呼ばず `repositories/` 経由にする）
 3. 自ドメイン Mutation で `invalidateQueries` を使う → `setQueryData` で直接更新する
 4. 統合テストで DB をモックする → 実 DB を使う
 5. 新しいシークレットを環境変数に平文で追加する → Secrets Manager に追加する

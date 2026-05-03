@@ -3,10 +3,8 @@
 .env.*
 docker-compose.override.yml
 
-# ローカルメモ
-INTERVIEW_NOTES.md
-求人票.md
-面接対策資料深掘り.md
+# ローカルメモ・面接対策
+面接対策/
 
 # CDK
 cdk-outputs.json

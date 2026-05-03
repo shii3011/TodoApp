@@ -1,3 +1,3 @@
-export * from './todos'
-export * from './tags'
-export { useKeyboardShortcuts } from './useKeyboardShortcuts'
+export * from '../features/todos/hooks'
+export * from '../features/tags/hooks'
+export { useKeyboardShortcuts } from '../shared/hooks/useKeyboardShortcuts'

@@ -19,33 +19,42 @@ setup('Cognito ログイン', async ({ page }) => {
   await page.goto('/')
 
   const logoutBtn = page.getByRole('button', { name: 'ログアウト' })
+  const loginBtn = page.getByRole('button', { name: 'ログイン / 登録' })
   const usernameField = page.getByPlaceholder('Enter your Username')
 
-  // どちらかが表示されるまで待機（最大 15 秒）
+  // ログアウト済み or ログイン済みのどちらかが表示されるまで待機（最大 15 秒）
   await Promise.race([
     logoutBtn.waitFor({ state: 'visible', timeout: 15_000 }),
-    usernameField.waitFor({ state: 'visible', timeout: 15_000 }),
+    loginBtn.waitFor({ state: 'visible', timeout: 15_000 }),
   ])
 
   // すでにログイン済みの場合はいったんログアウトして新鮮なトークンを取得する
   if (await logoutBtn.isVisible()) {
     await logoutBtn.click()
-    await usernameField.waitFor({ state: 'visible', timeout: 15_000 })
+    await loginBtn.waitFor({ state: 'visible', timeout: 15_000 })
   }
+
+  // ログインモーダルを開く
+  await loginBtn.click()
+  await usernameField.waitFor({ state: 'visible', timeout: 15_000 })
 
   // Amplify UI Authenticator のログインフォーム
   await usernameField.fill(email)
   await page.getByPlaceholder('パスワードを入力').fill(password)
+
+  // PUT /users/me（ユーザーDB同期）を Sign in クリック前に待ち受ける
+  const usersMeResponse = page.waitForResponse(
+    resp => resp.url().includes('/users/me') && resp.request().method() === 'PUT',
+    { timeout: 30_000 },
+  )
+
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // アプリ本体が表示されるまで待機
   await expect(logoutBtn).toBeVisible({ timeout: 15_000 })
 
-  // PUT /users/me（ユーザーDB同期）が完了するまで待機
-  await page.waitForResponse(
-    resp => resp.url().includes('/users/me') && resp.request().method() === 'PUT',
-    { timeout: 15_000 },
-  )
+  // PUT /users/me の完了を待機
+  await usersMeResponse
 
   await page.context().storageState({ path: SESSION_FILE })
 })

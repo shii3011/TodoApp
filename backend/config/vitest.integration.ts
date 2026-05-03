@@ -12,8 +12,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['tests/crud.test.ts', 'tests/concurrent.test.ts'],
-    globalSetup: ['tests/setup.integration.ts'],
+    include: ['tests/integration/**/*.test.ts'],
+    globalSetup: ['tests/integration/setup.integration.ts'],
     testTimeout: 30_000,
     // テストファイルを直列実行（並列だと同一 userId で DB 競合が起きる）
     fileParallelism: false,

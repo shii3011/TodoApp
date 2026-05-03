@@ -1,4 +1,5 @@
-import type { Tag, Todo, TodoForm } from '../../types'
+import type { Tag } from '../../features/tags/types'
+import type { Todo, TodoForm } from '../../features/todos/types'
 import { apiFetch } from '../api'
 import type { Repositories } from './types'
 
