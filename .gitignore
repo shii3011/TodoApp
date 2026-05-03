@@ -10,6 +10,9 @@ docker-compose.override.yml
 cdk-outputs.json
 cdk.out/
 
+# macOS
+.DS_Store
+
 # Node
 node_modules/
 
