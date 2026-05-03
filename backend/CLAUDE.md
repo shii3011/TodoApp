@@ -53,11 +53,35 @@ export async function createTodo(req: Request, res: Response, next: NextFunction
 
 ステータスコード: 201（作成）、204（削除）、デフォルト 200。
 
+サービスのインポートは `import * as todosService from '../../services/todos/index.js'` でまとめてインポートする。
+
 ---
 
 ## サービス層の書き方
 
-- Prisma アクセスはサービス層に集約する（コントローラーから直接 Prisma を呼ばない）
+- ビジネスロジック・業務チェックのみ。Prisma を直接呼ばない
+- DB アクセスは必ず repository 層経由（`createXxxService(repo)` で DI）
+- 書き込み操作（PUT / PATCH / DELETE）のロックは repository 層が担う
+- リソースが存在しない・権限なしは `AppError(404, '...')` をスロー（404 で統一）
+
+```typescript
+// サービスはリポジトリインターフェース経由でアクセスする
+export function createTodosService(todosRepo: TodosRepository, tagsRepo: TagsRepository) {
+  return {
+    async getTodo(id: string, userId: string): Promise<FormattedTodo> {
+      const todo = await todosRepo.findById(id, userId)
+      if (!todo) throw new AppError(404, 'Todo not found')
+      return todo
+    },
+  }
+}
+```
+
+---
+
+## リポジトリ層の書き方
+
+- Prisma アクセス・トランザクション・悲観的ロックを担う
 - 書き込み操作（PUT / PATCH / DELETE）は `SELECT FOR UPDATE` + `$transaction` で悲観的ロック
 - トランザクション設定は `ReadCommitted` + タイムアウト 10 秒を標準とする
 
@@ -74,10 +98,6 @@ async function lockTodoOrThrow(tx, id: string, userId: string): Promise<void> {
   if (locked.length === 0) throw new AppError(404, 'Todo not found');
 }
 ```
-
-- リソースが存在しない・権限なしは `AppError(404, '...')` をスロー（404 で統一）
-
-サービスのインポートは `import * as todosService from '../services/todosService.js'` でまとめてインポートする。
 
 ---
 

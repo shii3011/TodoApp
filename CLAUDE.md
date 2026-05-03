@@ -3,7 +3,7 @@
 タイトル・詳細・優先度・期日・タグ・サブタスクを管理する TODO アプリ。
 ローカル開発は Docker Compose、本番環境は AWS（Lambda + CloudFront + Cognito）。
 
-詳細な実装パターンは @.claude/rules/backend.md と @.claude/rules/frontend.md を参照。
+詳細な実装パターンは @backend/CLAUDE.md と @frontend/CLAUDE.md を参照。
 
 ---
 

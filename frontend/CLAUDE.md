@@ -17,7 +17,7 @@ return res.json() as Promise<Todo>
 フックファイルに定義する操作は 1 つだけ。Query と Mutation を分離する。
 
 ```
-hooks/todos/
+features/todos/hooks/
   useReadTodos.ts              # GET のみ
   useCreateTodo.ts             # POST のみ
   useUpdateTodo.ts             # PUT のみ
@@ -27,7 +27,7 @@ hooks/todos/
   useDeleteSubtask.ts          # DELETE（サブタスク）のみ
   useUpdateSubtaskComplete.ts  # PATCH（サブタスク完了トグル）のみ
   useTodosCache.ts             # キャッシュ操作ユーティリティ
-hooks/tags/
+features/tags/hooks/
   useReadTags.ts    # GET のみ
   useCreateTag.ts   # POST のみ
   useDeleteTag.ts   # DELETE のみ
@@ -96,7 +96,7 @@ import styles from './TodoCard.module.css'
 <li className={styles.card}>
 ```
 
-共有スタイルは `shared.module.css` に定義する。
+共有スタイルは `shared/components/shared.module.css` に定義する。
 CSS カスタムプロパティを使う場合は型キャストする：
 
 ```typescript
