@@ -270,7 +270,6 @@ docker compose up --build
 | 種別 | ファイル | 内容 | 件数 |
 |------|---------|------|------|
 | ユニット | `backend/tests/unit/schemas.test.ts` | Zod スキーマの境界値・バリデーション | 72 件 |
-| ユニット | `backend/tests/unit/todosService.test.ts` | サービス層のビジネスロジック（モック使用） | 8 件 |
 | 統合 | `backend/tests/integration/crud.test.ts` | 全エンドポイントの正常系・異常系 | 17 件 |
 | 統合 | `backend/tests/integration/concurrent.test.ts` | 50 件並列 PATCH/PUT の整合性検証 | 6 件 |
 | E2E | `frontend/e2e/todo.spec.ts` | Playwright による一連フロー | 7 件 |

@@ -9,9 +9,9 @@
 
 Zod スキーマの入力バリデーションのみ。controller・service・DB には触れない。
 
-**IMPORTANT**: controller 層・service 層のユニットテストは書かない。
-理由: ロジックがシンプルで、`tests/integration/` の HTTP テストがスタック全体を検証済みのため。
-モックを使ったユニットテストを追加しても検出できるバグは増えず、複雑さだけが増す。
+**IMPORTANT**: controller 層・service 層のユニットテストは現時点では書かない。
+理由: ビジネスロジックがシンプルで、`tests/integration/` の HTTP テストがスタック全体を検証済みのため。
+service 層のロジックが複雑になった段階で `createXxxService(mockRepo)` を使ったユニットテストを追加する。
 
 ---
 
