@@ -458,10 +458,10 @@ Lambda が持つ権限は以下のみです。
 
 | 権限 | スコープ | 理由 |
 |------|---------|------|
-| `ssm:GetParameter(s)` | `/todo-app/production/*` のみ | DB接続文字列・Cognito ID の取得。他パスは読めない |
-| `kms:Decrypt` | `*`（全 KMS キー） | SSM SecureString の復号に必要。本来は特定キー ARN に絞るべき改善余地あり |
+| `ssm:GetParameter(s)` | `/todo-app/production/*` のみ | DB 接続文字列・Cognito ID の取得。他パスは読めない |
+| `kms:Decrypt` | `*`（ただし `kms:ViaService: ssm.*.amazonaws.com` 条件付き） | SSM SecureString の復号に必要。SSM サービス経由の呼び出しのみに制限 |
 
-Lambda は S3・DynamoDB・他の AWS サービスへのアクセス権を一切持ちません。
+`kms:Decrypt` は `resources: ['*']` のままですが、`kms:ViaService` 条件により SSM 経由以外（例: 直接 KMS API 呼び出し）では使えません。Lambda は S3・DynamoDB・その他 AWS サービスへのアクセス権を一切持ちません。
 
 #### GitHub Actions デプロイロール
 
@@ -471,19 +471,27 @@ Lambda は S3・DynamoDB・他の AWS サービスへのアクセス権を一切
 | **Assume 可能なブランチ** | `refs/heads/main` のみ | fork や feature ブランチから AWS 操作できない |
 | **セッション有効期限** | 1 時間 | 侵害時のウィンドウを最小化 |
 
-デプロイロールは CDK でインフラ全体を管理する性質上、CloudFormation・Lambda・S3 等の権限が必要です。ただし「CDK デプロイ専用」という用途に用途が限定されており、通常のアプリ実行（Lambda）とは完全に分離されています。
+各権限のリソーススコープ：
+
+| 権限 | スコープ |
+|------|---------|
+| `cloudformation:*` | `stack/TodoApp*`・`stack/CDKToolkit/*` のみ |
+| `iam:CreateRole` 等 | `role/TodoApp*`・`role/cdk-*` のみ |
+| `ssm:GetParameter` 等 | `/todo-app/*`・`/cdk-bootstrap/*` のみ |
+| `logs:*` | `/aws/lambda/TodoApp*` のみ |
+| `s3:*`・`lambda:*`・`cloudfront:*` 等 | `*`（CDK の性質上スコープが困難） |
 
 ```
-GitHub Actions（デプロイロール）  ← インフラ操作のみ
-Lambda 実行ロール                 ← SSM 読み取りのみ
+GitHub Actions（デプロイロール）  ← インフラ操作のみ / main ブランチ限定
+Lambda 実行ロール                 ← SSM 読み取りのみ（特定パス）
 ```
 
 #### 侵害シナリオ別の影響範囲
 
 | 侵害対象 | 攻撃者にできること | 影響 |
 |---------|-----------------|------|
-| Lambda 実行ロール | SSM の `/todo-app/production/*` を読める | DB 接続文字列の漏洩（DB 自体への対策が別途必要） |
-| GitHub Actions ロール | CDK デプロイ・インフラ変更 | アプリへの悪意あるコード注入が可能（最大リスク） |
+| Lambda 実行ロール | `/todo-app/production/*` の SSM 読み取り | DB 接続文字列の漏洩（DB 自体への対策が別途必要） |
+| GitHub Actions ロール | `TodoApp*` スタックへの CDK デプロイ | アプリへの悪意あるコード注入が可能（最大リスク） |
 | GitHub Secrets | `E2E_EMAIL`/`E2E_PASSWORD`・`AWS_ROLE_ARN` の漏洩 | OIDC トークンなしでは AWS 操作不可。E2E アカウントは実害なし |
 
 ### セキュリティ対策一覧

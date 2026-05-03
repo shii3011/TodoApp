@@ -44,10 +44,14 @@ export class GitHubOidcStack extends cdk.Stack {
       inlinePolicies: {
         CdkDeployPolicy: new iam.PolicyDocument({
           statements: [
-            // CloudFormation（スタックのデプロイ・更新・削除）
+            // CloudFormation（アプリスタックと CDK ブートストラップのみ）
             new iam.PolicyStatement({
               actions: ['cloudformation:*'],
-              resources: ['*'],
+              resources: [
+                `arn:aws:cloudformation:*:${cdk.Aws.ACCOUNT_ID}:stack/TodoApp*/*`,
+                `arn:aws:cloudformation:*:${cdk.Aws.ACCOUNT_ID}:stack/GitHubOidc*/*`,
+                `arn:aws:cloudformation:*:${cdk.Aws.ACCOUNT_ID}:stack/CDKToolkit/*`,
+              ],
             }),
             // CDK ブートストラップ用（S3 アセットバケット・ECR）
             new iam.PolicyStatement({
@@ -69,7 +73,7 @@ export class GitHubOidcStack extends cdk.Stack {
               actions: ['cognito-idp:*'],
               resources: ['*'],
             }),
-            // IAM（Lambda 実行ロールの作成・管理）
+            // IAM（CDK が作成する Lambda 実行ロール・CDK ブートストラップロールのみ）
             new iam.PolicyStatement({
               actions: [
                 'iam:CreateRole', 'iam:DeleteRole', 'iam:GetRole', 'iam:PassRole',
@@ -79,21 +83,33 @@ export class GitHubOidcStack extends cdk.Stack {
                 'iam:ListAttachedRolePolicies', 'iam:UpdateAssumeRolePolicy',
                 'iam:TagRole', 'iam:UntagRole',
               ],
-              resources: ['*'],
+              resources: [
+                `arn:aws:iam::${cdk.Aws.ACCOUNT_ID}:role/TodoApp*`,
+                `arn:aws:iam::${cdk.Aws.ACCOUNT_ID}:role/GitHubOidc*`,
+                `arn:aws:iam::${cdk.Aws.ACCOUNT_ID}:role/cdk-*`,
+                `arn:aws:iam::${cdk.Aws.ACCOUNT_ID}:role/github-actions-deploy`,
+              ],
             }),
-            // CloudWatch Logs（Lambda ログ）
+            // CloudWatch Logs（Lambda ログ・API Gateway アクセスログ）
             new iam.PolicyStatement({
               actions: ['logs:*'],
-              resources: ['*'],
+              resources: [
+                `arn:aws:logs:*:${cdk.Aws.ACCOUNT_ID}:log-group:TodoApp*`,
+                `arn:aws:logs:*:${cdk.Aws.ACCOUNT_ID}:log-group:/aws/lambda/TodoApp*`,
+                `arn:aws:logs:*:${cdk.Aws.ACCOUNT_ID}:log-group::log-stream:*`,
+              ],
             }),
-            // SSM（CDK ブートストラップパラメータ + Parameter Store 管理）
+            // SSM（CDK ブートストラップパラメータ + アプリ用 Parameter Store）
             new iam.PolicyStatement({
               actions: [
                 'ssm:GetParameter', 'ssm:GetParameters', 'ssm:GetParametersByPath',
                 'ssm:PutParameter', 'ssm:DeleteParameter',
                 'ssm:AddTagsToResource', 'ssm:ListTagsForResource',
               ],
-              resources: ['*'],
+              resources: [
+                `arn:aws:ssm:*:${cdk.Aws.ACCOUNT_ID}:parameter/cdk-bootstrap/*`,
+                `arn:aws:ssm:*:${cdk.Aws.ACCOUNT_ID}:parameter/todo-app/*`,
+              ],
             }),
             // ECR Public（CDK の Lambda バンドル時に node:20-slim を pull するために必要）
             new iam.PolicyStatement({

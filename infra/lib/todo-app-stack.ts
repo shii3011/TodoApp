@@ -142,7 +142,7 @@ export class TodoAppStack extends cdk.Stack {
       },
     });
 
-    // Lambda が SSM パラメータを読み取れるよう権限を付与
+    // Lambda が SSM パラメータを読み取れるよう権限を付与（特定パスのみ）
     backendFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['ssm:GetParameters', 'ssm:GetParameter'],
       resources: [
@@ -150,9 +150,15 @@ export class TodoAppStack extends cdk.Stack {
       ],
     }));
     // SecureString の KMS 復号権限（DATABASE_URL）
+    // kms:ViaService 条件により SSM サービス経由の呼び出しのみに制限
     backendFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['kms:Decrypt'],
       resources: ['*'],
+      conditions: {
+        StringEquals: {
+          'kms:ViaService': `ssm.${this.region}.amazonaws.com`,
+        },
+      },
     }));
 
     // ==================== API Gateway ====================
