@@ -446,6 +446,46 @@ docker-compose.override.yml   # E2E_EMAIL / E2E_PASSWORD を含む
 
 GitHub Actions は OIDC 認証で AWS へアクセスするため、長期アクセスキー（`AWS_ACCESS_KEY_ID` 等）は一切使用していません。
 
+### IAM 権限設計
+
+**基本方針: 最小権限の原則（Least Privilege）**
+
+各ロールに必要最低限の権限だけを付与し、侵害された場合の影響範囲を限定しています。
+
+#### Lambda 実行ロール
+
+Lambda が持つ権限は以下のみです。
+
+| 権限 | スコープ | 理由 |
+|------|---------|------|
+| `ssm:GetParameter(s)` | `/todo-app/production/*` のみ | DB接続文字列・Cognito ID の取得。他パスは読めない |
+| `kms:Decrypt` | `*`（全 KMS キー） | SSM SecureString の復号に必要。本来は特定キー ARN に絞るべき改善余地あり |
+
+Lambda は S3・DynamoDB・他の AWS サービスへのアクセス権を一切持ちません。
+
+#### GitHub Actions デプロイロール
+
+| 制約 | 設定値 | 効果 |
+|------|--------|------|
+| **認証方式** | OIDC（長期アクセスキーなし） | キー漏洩リスクをゼロにする |
+| **Assume 可能なブランチ** | `refs/heads/main` のみ | fork や feature ブランチから AWS 操作できない |
+| **セッション有効期限** | 1 時間 | 侵害時のウィンドウを最小化 |
+
+デプロイロールは CDK でインフラ全体を管理する性質上、CloudFormation・Lambda・S3 等の権限が必要です。ただし「CDK デプロイ専用」という用途に用途が限定されており、通常のアプリ実行（Lambda）とは完全に分離されています。
+
+```
+GitHub Actions（デプロイロール）  ← インフラ操作のみ
+Lambda 実行ロール                 ← SSM 読み取りのみ
+```
+
+#### 侵害シナリオ別の影響範囲
+
+| 侵害対象 | 攻撃者にできること | 影響 |
+|---------|-----------------|------|
+| Lambda 実行ロール | SSM の `/todo-app/production/*` を読める | DB 接続文字列の漏洩（DB 自体への対策が別途必要） |
+| GitHub Actions ロール | CDK デプロイ・インフラ変更 | アプリへの悪意あるコード注入が可能（最大リスク） |
+| GitHub Secrets | `E2E_EMAIL`/`E2E_PASSWORD`・`AWS_ROLE_ARN` の漏洩 | OIDC トークンなしでは AWS 操作不可。E2E アカウントは実害なし |
+
 ### セキュリティ対策一覧
 
 | 対策 | 実装方法 |
