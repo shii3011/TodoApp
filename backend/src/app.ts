@@ -34,27 +34,11 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
     express.json({ limit: '10kb' })(req, _res, next);
   }
 });
-if (process.env.NODE_ENV === 'production') {
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 200,
-      standardHeaders: true,
-      legacyHeaders: false,
-      message: { message: 'Too many requests, please try again later' },
-    }),
-  );
-}
-
-// ヘルスチェック（認証不要）
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok' });
-});
 
 // 全ルートに認証を適用
 app.use(authMiddleware);
 
-// 認証済みユーザーごとのレートリミット（IP ベースの制限と二重防護）
+// ユーザーIDベースのレートリミット（WAFで対応できないユーザー単位の制限をアプリ層で補う）
 if (process.env.NODE_ENV === 'production') {
   app.use(
     rateLimit({
