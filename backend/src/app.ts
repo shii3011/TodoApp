@@ -35,6 +35,11 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   }
 });
 
+// ヘルスチェック（認証不要）
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // 全ルートに認証を適用
 app.use(authMiddleware);
 
